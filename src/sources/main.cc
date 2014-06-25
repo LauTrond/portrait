@@ -6,6 +6,9 @@
 
 #include "sybie/datain/datain.hh"
 #include "sybie/common/ManagedRes.hh"
+#include "sybie/common/Time.hh"
+
+using namespace sybie;
 
 const std::string WindowName = "Potrait";
 enum { FrameWidth = 1280, FrameHeight = 720 };
@@ -42,6 +45,8 @@ int main()
         cam.read(frame);
         cv::imshow(WindowName, frame);
     }
+
+    common::DateTime start_time = common::DateTime::Now();
 
     //人脸检测
     cv::CascadeClassifier face_cascade;
@@ -156,6 +161,9 @@ int main()
             p = p * alpha + BackColor * (1-alpha);
             //p = cv::Vec3b(ma,ma,ma);
         }
+
+    common::DateTime finish_time = common::DateTime::Now();
+    std::cout<<"Cost:"<<(finish_time - start_time)<<std::endl;
 
     //显示结果
     cv::namedWindow(WindowName+"0", CV_WINDOW_AUTOSIZE);

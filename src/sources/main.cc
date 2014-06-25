@@ -88,6 +88,15 @@ int main(int argc, char** argv)
         area.width = (int)(face.width * (1 + PotraitWidth * 2));
         area.y = face.y - (int)(face.height * PotraitUpperBound);
         area.height = (int)(face.height * (1 + PotraitUpperBound + PotraitLowerBound));
+        if (   area.x < 0
+            || area.x + area.width >= frame.cols
+            || area.y < 0
+            || area.y + area.height >= frame.rows)
+        {
+            std::cout<<"Face out of range."<<std::endl;
+            continue;
+        }
+
         cv::Mat img_potrait(frame, area);
 
         //组织初始mask

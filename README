@@ -4,3 +4,4 @@
 git clone git://code.csdn.net/AgueweedL/common.git
 3）进入make子目录，执行make。
 4）执行make run启动。
+5）需要GCC 4.8以上版本。

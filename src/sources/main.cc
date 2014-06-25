@@ -78,7 +78,7 @@ int main(int argc, char** argv)
         if (faces.size() == 0)
         {
             std::cout<<"Failed detect face."<<std::endl;
-            return 0;
+            continue;
         }
 
         //裁剪人像
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
         cv::grabCut(img_potrait, mask, cv::Rect(), bgModel,fgModel, 3,
                     cv::GC_INIT_WITH_MASK);
 
-        //计算alpha
+        //计算边缘混合比例
         cv::Mat mask_alpha(img_potrait.rows, img_potrait.cols, CV_8UC1);
         for (int r = 0 ; r < mask_alpha.rows ; r++)
             for (int c = 0 ; c < mask_alpha.cols ; c++)

@@ -5,7 +5,6 @@
 
 #include "sybie/datain/datain.hh"
 #include "sybie/common/ManagedRes.hh"
-#include "sybie/common/Log.hh"
 
 const std::string WindowName = "Potrait";
 enum { FrameWidth = 1280, FrameHeight = 720 };
@@ -16,8 +15,8 @@ const double
     PotraitWidth = 0.2;
 
 const double
-    FrontUpper = 0.0,
-    FrontWidth = 0.1;
+    BGWidth = 0.1,
+    BGTop = 0.7;
 
 
 int main()
@@ -35,14 +34,17 @@ int main()
         cam.read(frame);
         cv::imshow(WindowName, frame);
     }
+
     //人脸检测
-    sybie::common::TemporaryFile CascadeFile =
-        sybie::datain::GetTemp("haarcascade_frontalface_alt.xml");
     cv::CascadeClassifier face_cascade;
-    if (!face_cascade.load(CascadeFile.GetFilename()))
     {
-        std::cerr<<"Failed load cascade file: "<<CascadeFile.GetFilename()<<std::endl;
-        return 1;
+        sybie::common::TemporaryFile CascadeFile =
+            sybie::datain::GetTemp("haarcascade_frontalface_alt.xml");
+        if (!face_cascade.load(CascadeFile.GetFilename()))
+        {
+            std::cerr<<"Failed load cascade file: "<<CascadeFile.GetFilename()<<std::endl;
+            return 1;
+        }
     }
     cv::Mat frame_gray;
     std::vector<cv::Rect> faces;
@@ -65,20 +67,13 @@ int main()
     std::cout<<"Cut:"<<area<<std::endl;
     cv::Mat img_potrait(frame, area);
 
-    //前景矩形
-    cv::Rect front_rect;
-    front_rect.x = (int)(area.width * FrontWidth);
-    front_rect.width = area.width - front_rect.x * 2;
-    front_rect.y = (int)(area.height * FrontUpper);
-    front_rect.height = area.height - front_rect.y;
-
     //组织mask
     cv::Mat mask(img_potrait.rows, img_potrait.cols, CV_8UC1);
     for (int r = 0 ; r < mask.rows ; r++)
         for (int c = 0 ; c < mask.cols ; c++)
         {
             uint8_t& m = mask.at<uint8_t>(r,c);
-            if ((c < mask.cols * 0.1 || c > mask.cols * (1- 0.1)) && r < mask.rows * 0.7)
+            if ((c < mask.cols * BGWidth || c > mask.cols * (1- BGWidth)) && r < mask.rows * BGTop)
                 m = cv::GC_BGD;
             else
                 m = cv::GC_PR_FGD;
@@ -86,9 +81,10 @@ int main()
 
     //分离
     cv::Mat bgModel,fgModel; //临时空间
-    cv::grabCut(img_potrait, mask, front_rect, bgModel,fgModel, 3,
+    cv::grabCut(img_potrait, mask, cv::Rect(), bgModel,fgModel, 3,
                 cv::GC_INIT_WITH_MASK);
 
+    //mask应用到照片
     for (int r = 0 ; r < img_potrait.rows ; r++)
         for (int c = 0 ; c < img_potrait.cols ; c++)
         {
@@ -97,6 +93,7 @@ int main()
                 img_potrait.at<cv::Vec3b>(r,c) = 0;
         }
 
+    //显示结果
     cv::namedWindow(WindowName+"0", CV_WINDOW_AUTOSIZE);
     cv::imshow(WindowName+"0", img_potrait);
 

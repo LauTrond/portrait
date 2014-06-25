@@ -1,5 +1,6 @@
-如何编译本代码：
+如何部署使用本代码：
 1）安装部署OpenCV
 2）将common库拉到potrait-seg的同级目录下：
 git clone git://code.csdn.net/AgueweedL/common.git
 3）进入make子目录，执行make。
+4）执行make run启动。

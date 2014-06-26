@@ -7,6 +7,7 @@
 #include "sybie/datain/datain.hh"
 #include "sybie/common/ManagedRes.hh"
 #include "sybie/common/Time.hh"
+#include "sybie/common/RichAssert.hh"
 
 using namespace sybie;
 
@@ -20,10 +21,12 @@ const double
 
 const double
     BGWidth = 0.1,
-    BGTop = 0.3,
+    BGTop = 0.38,
     BGBottom = 0.1;
 
-const cv::Vec3b BackColor(243, 191, 0);
+const cv::Vec3b NewBackColor
+(243, 191, 0);
+//(0, 0, 255);
 
 int Dist(const cv::Vec3i& vec)
 {
@@ -34,6 +37,7 @@ int main(int argc, char** argv)
 {
     cv::namedWindow(WindowName, CV_WINDOW_AUTOSIZE);
     cv::namedWindow(WindowName+"0", CV_WINDOW_AUTOSIZE);
+    cv::namedWindow(WindowName+"1", CV_WINDOW_AUTOSIZE);
 
     //初始化人脸检测模块
     cv::CascadeClassifier face_cascade;
@@ -120,17 +124,18 @@ int main(int argc, char** argv)
         cv::Mat bgModel,fgModel; //临时空间
         cv::grabCut(img_potrait, mask, cv::Rect(), bgModel,fgModel, 3,
                     cv::GC_INIT_WITH_MASK);
+        cv::imshow(WindowName+"0", img_potrait);
 
-        //计算边缘混合比例
-        cv::Mat mask_alpha(img_potrait.rows, img_potrait.cols, CV_8UC1);
-        for (int r = 0 ; r < mask_alpha.rows ; r++)
-            for (int c = 0 ; c < mask_alpha.cols ; c++)
+        //找出边缘像素
+        cv::Mat mask_border(img_potrait.rows, img_potrait.cols, CV_8UC1);
+        for (int r = 0 ; r < mask_border.rows ; r++)
+            for (int c = 0 ; c < mask_border.cols ; c++)
             {
-                uint8_t& ma = mask_alpha.at<uint8_t>(r,c);
+                uint8_t& mb = mask_border.at<uint8_t>(r,c);
                 bool has_front = false;
                 bool has_back = false;
-                for (int rr = std::max(r-2,0) ; rr <= std::min(r+2,mask_alpha.rows-1) ; rr++)
-                    for (int cc = std::max(c-2,0) ; cc <= std::min(c+2,mask_alpha.cols-1) ; cc++)
+                for (int rr = std::max(r-2,0) ; rr <= std::min(r+2,mask_border.rows-1) ; rr++)
+                    for (int cc = std::max(c-2,0) ; cc <= std::min(c+2,mask_border.cols-1) ; cc++)
                     {
                         uint8_t& m = mask.at<uint8_t>(rr,cc);
                         if (m == cv::GC_BGD || m == cv::GC_PR_BGD)
@@ -139,39 +144,65 @@ int main(int argc, char** argv)
                             has_front = true;
                     }
                 if (has_front && has_back)
-                    ma = 128;
+                    mb = 128;
                 else if (has_front)
-                    ma = 255;
+                    mb = 255;
                 else
-                    ma = 0;
+                    mb = 0;
             }
+        cv::Mat mask_alpha(img_potrait.rows, img_potrait.cols, CV_8UC1);
+        cv::Mat back_color(img_potrait.rows, img_potrait.cols, CV_8UC3);
+        //cv::Mat& mask_alpha = mask_border;
         for (int r = 0 ; r < mask_alpha.rows ; r++)
             for (int c = 0 ; c < mask_alpha.cols ; c++)
             {
+                uint8_t& mb = mask_border.at<uint8_t>(r,c);
                 uint8_t& ma = mask_alpha.at<uint8_t>(r,c);
-                if (ma != 128)
-                    continue;
-                int cnt_back = 0, cnt_front = 0;
-                cv::Vec3i sum_back(0,0,0), sum_front(0,0,0);
+                cv::Vec3b& bc = back_color.at<cv::Vec3b>(r,c);
+                ma = mb; //默认混合
+                bc = img_potrait.at<cv::Vec3b>(r,c);
 
-                for (int rr = std::max(r-5,0) ; rr <= std::min(r+5,mask_alpha.rows-1) ; rr++)
-                    for (int cc = std::max(c-5,0) ; cc <= std::min(c+5,mask_alpha.cols-1) ; cc++)
+                if (mb == 128) //边缘像素，计算混合比例
+                {
+                    int cnt_back = 0, cnt_front = 0;
+                    cv::Vec3i sum_back(0,0,0), sum_front(0,0,0);
+
+                    for (int rr = std::max(r-5,0) ; rr <= std::min(r+5,mask_alpha.rows-1) ; rr++)
+                        for (int cc = std::max(c-5,0) ; cc <= std::min(c+5,mask_alpha.cols-1) ; cc++)
+                        {
+                            uint8_t& mbrange = mask_border.at<uint8_t>(rr,cc);
+                            cv::Vec3b& pixel = img_potrait.at<cv::Vec3b>(rr,cc);
+                            if (mbrange == 0)
+                                sum_back += pixel, cnt_back++;
+                            if (mbrange == 255)
+                                sum_front += pixel, cnt_front++;
+                        }
+
+                    /*if (cnt_back > 0 && cnt_front > 0)
                     {
-                        uint8_t& mb = mask_alpha.at<uint8_t>(rr,cc);
-                        cv::Vec3b& p = img_potrait.at<cv::Vec3b>(rr,cc);
-                        if (mb == 0)
-                            sum_back += p, cnt_back++;
-                        if (mb == 255)
-                            sum_front += p, cnt_front++;
+                        cv::Vec3i adv_back = sum_back / cnt_back;
+                        cv::Vec3i adv_front = sum_front / cnt_front;
+                        cv::Vec3i cur = img_potrait.at<cv::Vec3b>(r,c);
+                        int dist_back = Dist(adv_back - cur);
+                        int dist_front = Dist(adv_front - cur);
+                        ma = 255 * dist_back / (dist_front + dist_back);
+                    }*/
+
+                    if (cnt_back > 0 && cnt_front > 0)
+                    {
+                        cv::Vec3i cur = (cv::Vec3i)img_potrait.at<cv::Vec3b>(r,c);
+                        int dist_back = cnt_front * Dist(sum_back - cur * cnt_back);
+                        int dist_front = cnt_back * Dist(sum_front - cur * cnt_front);
+                        ma = 255 * dist_back / (dist_front + dist_back);
+                    }
+                    else if (cnt_back > 0 || cnt_front > 0)
+                    {
+                        ma = 255 * cnt_front / (cnt_back + cnt_front);
                     }
 
-                cv::Vec3i adv_back = sum_back / cnt_back;
-                cv::Vec3i adv_front = sum_front / cnt_front;
-                cv::Vec3i cur = img_potrait.at<cv::Vec3b>(r,c);
-                int dist_back = Dist(adv_back - cur);
-                int dist_front = Dist(adv_front - cur);
-
-                ma = 255 * dist_back / (dist_front + dist_back);
+                    if (cnt_back > 0)
+                        bc = sum_back / cnt_back;
+                }
             }
 
         //mask应用到照片，前景合背景混合
@@ -179,10 +210,13 @@ int main(int argc, char** argv)
             for (int c = 0 ; c < img_potrait.cols ; c++)
             {
                 uint8_t ma = mask_alpha.at<uint8_t>(r,c);
-                cv::Vec3b& p = img_potrait.at<cv::Vec3b>(r,c);
-                double alpha = (double)ma / 255;
-                p = p * alpha + BackColor * (1-alpha);
-                //p = cv::Vec3b(ma,ma,ma);
+                if (ma < 255)
+                {
+                    double alpha = (double)ma / 255;
+                    cv::Vec3b& pixel = img_potrait.at<cv::Vec3b>(r,c);
+                    cv::Vec3b& back = back_color.at<cv::Vec3b>(r,c);
+                    pixel += ((cv::Vec3i)NewBackColor - (cv::Vec3i)back) * (1 - alpha);
+                }
             }
 
         //显示耗时
@@ -190,7 +224,7 @@ int main(int argc, char** argv)
         std::cout<<"Cost:"<<(finish_time - start_time)<<std::endl;
 
         //显示结果
-        cv::imshow(WindowName+"0", img_potrait);
+        cv::imshow(WindowName+"1", img_potrait);
     }
     return 0;
 }

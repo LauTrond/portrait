@@ -1,9 +1,9 @@
 #include <iostream>
+#include <exception>
 
 #include "opencv2/opencv.hpp"
 
 #include "portrait/portrait.hh"
-
 #include "sybie/common/Time.hh"
 
 using namespace sybie;
@@ -47,15 +47,23 @@ int main(int argc, char** argv)
         //开始计时
         common::DateTime start_time = common::DateTime::Now();
 
-        SemiData semi = PortraitProcessSemi(std::move(frame), FaceResizeTo);
-        cv::imshow(WindowName + "_src", semi.GetImage());
-
-        for (int i = 0 ; i < NewBackColor.size() ; i++)
+        try
         {
-            cv::Mat img_mix = PortraitMix(
-                semi, cv::Size(250,350), 0, NewBackColor[i]);
-            //显示结果
-            cv::imshow(WindowName + std::to_string(i), img_mix);
+            SemiData semi = PortraitProcessSemi(std::move(frame), FaceResizeTo);
+            cv::imshow(WindowName + "_src", semi.GetImage());
+
+            for (int i = 0 ; i < NewBackColor.size() ; i++)
+            {
+                cv::Mat img_mix = PortraitMix(
+                    semi, cv::Size(250,350), 0, NewBackColor[i]);
+                //显示结果
+                cv::imshow(WindowName + std::to_string(i), img_mix);
+            }
+        }
+        catch (std::exception& err)
+        {
+            std::cout << "Error: " << err.what() << std::endl;
+            continue;
         }
 
         //显示耗时

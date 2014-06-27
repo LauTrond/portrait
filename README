@@ -1,7 +1,16 @@
-如何部署使用本代码：
-1）安装部署OpenCV
-2）将common库拉到potrait-seg的同级目录下：
-git clone git://code.csdn.net/AgueweedL/common.git
-3）进入make子目录，执行make。
-4）执行make run启动。
-5）需要GCC 4.8以上版本。
+Linux、OSX下使用：
+1）进入make/camera子目录，执行make编译。
+2）执行make run启动。
+
+Linux下系统需求：
+1）GCC 4.8以上版本。（使用了一些C++11特性，较老版本不支持）
+2）OpenCV
+
+OS X下系统需求
+1）GCC 4.8或者Apple LLVM 5.1以上版本（使用了一些C++11特性，较老版本不支持）
+2）OpenCV
+3）pkg-config
+
+Windows下编译程序需求：
+1）VC 12（VS2013）（使用了一些C++11特性，较老版本不支持）
+2）OpenCV

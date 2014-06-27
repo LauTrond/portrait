@@ -5,6 +5,7 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 
 namespace sybie {
 namespace datain {
@@ -28,6 +29,9 @@ Pool::~Pool()
 
 void Pool::Set(const char* data_id, const char* data)
 {
+#ifdef _DEBUG
+    std::cout<<data_id<<" imported."<<std::endl;
+#endif
     (*(PoolMap*)_impl)[data_id] = data;
 }
 

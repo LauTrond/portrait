@@ -6,8 +6,8 @@ ifneq ($(PORTRAIT_DIR), $(wildcard $(PORTRAIT_DIR)))
     $(error Cannot find portrait at $(PORTRAIT_DIR), define PORTRAIT_DIR first.)
 endif
 
-PORTRAIT_LIBA_DEBUG  :=$(PORTRAIT)/make/common/bin/debug/libportrait.a
-PORTRAIT_LIBA_RELEASE:=$(PORTRAIT)/make/common/bin/release/libportrait.a
+PORTRAIT_LIBA_DEBUG  :=$(PORTRAIT_DIR)/make/common/bin/debug/libportrait.a
+PORTRAIT_LIBA_RELEASE:=$(PORTRAIT_DIR)/make/common/bin/release/libportrait.a
 
 ifdef debug
   PORTRAIT_LIBA:=$(PORTRAIT_LIBA_DEBUG)
@@ -15,7 +15,7 @@ else
   PORTRAIT_LIBA:=$(PORTRAIT_LIBA_RELEASE)
 endif
 
-CXXFLAGS     += `pkg-config --cflags opencv` -I$(PORTRAIT)/include
+CXXFLAGS     += `pkg-config --cflags opencv` -I$(PORTRAIT_DIR)/include
 LIBS         += `pkg-config --libs opencv`
 EXT_LNK_OBJS += $(PORTRAIT_LIBA)
 
@@ -23,8 +23,8 @@ EXT_LNK_OBJS += $(PORTRAIT_LIBA)
 all :
 
 PORTRAIT_ALL_SRC:= \
-  $(shell find $(PORTRAIT)/src -name "*") \
-  $(shell find $(PORTRAIT)/include -name "*")
+  $(shell find $(PORTRAIT_DIR)/src -name "*") \
+  $(shell find $(PORTRAIT_DIR)/include -name "*")
 
 $(PORTRAIT_LIBA_DEBUG) : $(PORTRAIT_ALL_SRC)
 	@$(MAKE) -C $(PORTRAIT_DIR)/make/common debug=1

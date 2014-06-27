@@ -1,6 +1,6 @@
 BIN      := libportrait.a
 SRC_DIR  := ../../src/sources
-SRC_FILES:=
+SRC_FILES:= \
     portrait/algorithm.cc \
     portrait/exception.cc \
     portrait/facedetect.cc \

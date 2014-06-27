@@ -1,9 +1,10 @@
 #include "portrait/facedetect.hh"
 
 #include "sybie/common/ManagedRes.hh" //sybie::common::TemporaryFile
+#include "sybie/common/RichAssert.hh" //sybie_assert
 #include "sybie/datain/datain.hh" //sybie::datain::GetTemp
 
-#include "exception.hh"
+#include "portrait/exception.hh"
 
 namespace portrait {
 
@@ -12,12 +13,13 @@ cv::CascadeClassifier& InitFaceCascadeClassifier()
     static cv::CascadeClassifier face_cascade;
     sybie::common::TemporaryFile CascadeFile =
         sybie::datain::GetTemp("haarcascade_frontalface_alt.xml");
-    if (!face_cascade.load(CascadeFile.GetFilename()))
+    bool succ = face_cascade.load(CascadeFile.GetFilename());
+    if (!succ)
     {
-        std::cerr<<"Failed load cascade file: "
-                 <<CascadeFile.GetFilename()<<std::endl;
-        return 1;
+        throw std::runtime_error((std::string)"Failed load cascade file: "
+                                 + CascadeFile.GetFilename());
     }
+
     return face_cascade;
 }
 
@@ -35,6 +37,9 @@ void InitFaceDetect()
 
 std::vector<cv::Rect> DetectFaces(const cv::Mat& image)
 {
+    cv::Mat frame_gray;
+    cv::cvtColor(image, frame_gray, CV_BGR2GRAY);
+
     std::vector<cv::Rect> faces;
     GetFaceCascadeClassifier().detectMultiScale(
         frame_gray, faces, 1.1, 2,
@@ -45,10 +50,10 @@ std::vector<cv::Rect> DetectFaces(const cv::Mat& image)
 cv::Rect DetectSingleFace(const cv::Mat& image)
 {
     std::vector<cv::Rect> faces = DetectFaces(image);
-    if (faces == 0)
-        return Error(FaceNotFound);
-    if (faces > 1)
-        return Error(TooManyFaces);
+    if (faces.size() == 0)
+        throw Error(FaceNotFound);
+    if (faces.size() > 1)
+        throw Error(TooManyFaces);
     return faces[0];
 }
 

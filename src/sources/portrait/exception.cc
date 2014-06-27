@@ -17,7 +17,7 @@ Error::Error(ErrorType type)
     : std::logic_error(GetErrorDescription(_type)), _type(type)
 { }
 
-~Error() throw()
+Error::~Error() throw()
 { }
 
 }  //namespace portrait

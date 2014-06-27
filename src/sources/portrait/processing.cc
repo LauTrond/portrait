@@ -15,8 +15,8 @@ cv::Mat PortraitProcessAll(
     const int VerticalOffset,
     const cv::Vec3b& back_color)
 {
-    SemiData semi = PortraitProcessSemi(photo, face_resize_to);
-    return Mix(portrait_size, VerticalOffset, back_color);
+    SemiData semi = PortraitProcessSemi(std::move(photo), face_resize_to);
+    return PortraitMix(semi, portrait_size, VerticalOffset, back_color);
 }
 
 struct SemiDataImpl
@@ -53,7 +53,7 @@ void SemiData::Swap(SemiData& another) throw()
     std::swap(_data, another._data);
 }
 
-void* SemiData::Get() throw()
+void* SemiData::Get() const throw()
 {
     return _data;
 }

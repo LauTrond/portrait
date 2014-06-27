@@ -25,7 +25,7 @@ public:
     SemiData& operator=(SemiData&& another) throw();
     void Swap(SemiData& another) throw();
 public:
-    void& Get() const throw();
+    void* Get() const throw();
     cv::Mat GetImage() const;
 private:
     void* _data;

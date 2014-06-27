@@ -103,7 +103,7 @@ cv::Rect ResizeFace(
     double scale_y = (double)face_resize_to.height / face_area.height;
     cv::Size new_size(image.cols * scale_x, image.rows * scale_x);
     cv::Mat resized_image;
-    cv::resize(image, resized_image, new_size, 0, 0, INTER_AREA);
+    cv::resize(image, resized_image, new_size, 0, 0, cv::INTER_AREA);
     image = resized_image;
 
     return cv::Rect (face_area.x * scale_x,
@@ -141,7 +141,7 @@ cv::Mat GetFrontBackMask(
 
     //抠图
     cv::Mat bgModel,fgModel; //临时空间
-    cv::grabCut(img_potrait, mask_grab, cv::Rect(),
+    cv::grabCut(image, mask_grab, cv::Rect(),
                 bgModel,fgModel,
                 GrabCutInteration, cv::GC_INIT_WITH_MASK);
 
@@ -175,15 +175,15 @@ cv::Mat GetFrontBackMask(
         }
 
     //计算背景色和Alpha
-    cv::Mat result(img_potrait.rows, img_potrait.cols, CV_8UC4);
+    cv::Mat result(image.rows, image.cols, CV_8UC4);
     for (int r = 0 ; r < image.rows ; r++)
         for (int c = 0 ; c < image.cols ; c++)
         {
             uint8_t& mb = mask_border.at<uint8_t>(r,c);
 
-            cv::Vec4b& r = result.at<cv::Vec4b>(r,c);
-            uint8_t& alpha = r[3];
-            cv::Vec3b& backc = *(cv::Vec3b*)&r;
+            cv::Vec4b& p = result.at<cv::Vec4b>(r,c);
+            uint8_t& alpha = p[3];
+            cv::Vec3b& backc = *(cv::Vec3b*)(void*)&p;
 
             alpha = mb; //默认混合
             backc = image.at<cv::Vec3b>(r,c); //默认背色
@@ -201,7 +201,7 @@ cv::Mat GetFrontBackMask(
                              cc++)
                     {
                         uint8_t& mbrange = mask_border.at<uint8_t>(rr,cc);
-                        cv::Vec3b& pixel = image.at<cv::Vec3b>(rr,cc);
+                        const cv::Vec3b& pixel = image.at<cv::Vec3b>(rr,cc);
                         if (mbrange == 0)
                             sum_back += pixel, cnt_back++;
                         if (mbrange == 255)
@@ -237,17 +237,17 @@ cv::Mat Mix(
     for (int r = 0 ; r < image.rows ; r++)
         for (int c = 0 ; c < image.cols ; c++)
         {
-            cv::Vec4b& r = result.at<cv::Vec4b>(r,c);
-            uint8_t& alpha = r[3];
-            cv::Vec3b& backc = *(cv::Vec3b*)&r;
+            const cv::Vec4b& p = raw.at<cv::Vec4b>(r,c);
+            const uint8_t& alpha = p[3];
+            const cv::Vec3b& backc = *(const cv::Vec3b*)(const void*)&p;
 
-            cv::Vec3b& src = image.at<cv::Vec3b>(r,c);
+            const cv::Vec3b& src = image.at<cv::Vec3b>(r,c);
             cv::Vec3b& mix = image_mix.at<cv::Vec3b>(r,c);
             mix = src;
 
             if (alpha < 255) //替换背景
-                mix += ((cv::Vec3i)back_color - (cv::Vec3i)back)
-                    * (1 - (double)ma / 255);
+                mix += ((cv::Vec3i)back_color - (cv::Vec3i)backc)
+                    * (1 - (double)alpha / 255);
         }
     return image_mix;
 }

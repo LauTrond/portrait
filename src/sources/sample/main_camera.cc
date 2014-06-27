@@ -7,6 +7,7 @@
 #include "sybie/common/Time.hh"
 
 using namespace sybie;
+using namespace portrait;
 
 const std::string WindowName = "Potrait";
 enum { FrameWidth = 1280, FrameHeight = 720 };
@@ -46,7 +47,7 @@ int main(int argc, char** argv)
         //开始计时
         common::DateTime start_time = common::DateTime::Now();
 
-        SemiData semi = PortraitProcessSemi(frame, FaceResizeTo);
+        SemiData semi = PortraitProcessSemi(std::move(frame), FaceResizeTo);
         cv::imshow(WindowName + "_src", semi.GetImage());
 
         for (int i = 0 ; i < NewBackColor.size() ; i++)

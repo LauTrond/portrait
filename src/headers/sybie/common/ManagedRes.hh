@@ -69,7 +69,7 @@ private:
  * 例如：
  * void func()
  * {
- *   int* int = new int();
+ *   int* ptr = new int();
  *   ON_SCOPE_EXIT([&]{ delete ptr; }); //Lamda表达式(C++11语法)
  *   //使用ptr
  * }

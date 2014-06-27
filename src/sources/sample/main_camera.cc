@@ -11,7 +11,8 @@ using namespace portrait;
 
 const std::string WindowName = "Potrait";
 enum { FrameWidth = 1280, FrameHeight = 720 };
-enum { FaceResizeTo = 200};
+enum { FaceResizeTo = 200 };
+enum { PortraitWidth = 250, PortraitHeight = 200 };
 
 const std::vector<cv::Vec3b> NewBackColor({
 {243, 191, 0},
@@ -49,13 +50,17 @@ int main(int argc, char** argv)
 
         try
         {
+            //抠图
             SemiData semi = PortraitProcessSemi(std::move(frame), FaceResizeTo);
             cv::imshow(WindowName + "_src", semi.GetImage());
 
+            //针对每种背景色混合背景
             for (int i = 0 ; i < NewBackColor.size() ; i++)
             {
+                //混合
                 cv::Mat img_mix = PortraitMix(
-                    semi, cv::Size(250,350), 0, NewBackColor[i]);
+                    semi, cv::Size(PortraitWidth, PortraitHeight),
+                    0, NewBackColor[i]);
                 //显示结果
                 cv::imshow(WindowName + std::to_string(i), img_mix);
             }

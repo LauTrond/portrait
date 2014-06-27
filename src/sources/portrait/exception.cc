@@ -10,11 +10,11 @@ static std::string GetErrorDescription(ErrorType _type)
     ERRORMSG(FaceNotFound);
     ERRORMSG(TooManyFaces);
     ERRORMSG(OutOfRange);
-    return "";
+    return "Unknown";
 }
 
 Error::Error(ErrorType type)
-    : std::logic_error(GetErrorDescription(_type)), _type(type)
+    : std::logic_error(GetErrorDescription(type)), _type(type)
 { }
 
 Error::~Error() throw()

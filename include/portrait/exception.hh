@@ -11,7 +11,7 @@ enum ErrorType
     OutOfRange = 3
 };
 
-class Error : std::logic_error
+class Error : public std::logic_error
 {
 public:
     Error(ErrorType type) throw();

@@ -10,7 +10,7 @@ namespace portrait {
 cv::Mat PortraitProcessAll(
     cv::Mat&& photo, //CV_8UC3
     const int face_resize_to = 200,
-    const cv::Size& portrait_size = cv::Size(350,450),
+    const cv::Size& portrait_size = cv::Size(300,400),
     const int VerticalOffset = 0,
     const cv::Vec3b& back_color = {240,240,240});
 

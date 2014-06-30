@@ -11,12 +11,23 @@ const int
     BorderSize = 3,
     MixSize = BorderSize * 2 + 1;
 
-const int GrabCutInteration = 3;
+const int GrabCutInteration = 1;
 
+//以下多个常数定义前景、背景划分的关键数值，全是检测出人脸矩形的长宽比例。
+
+//背景
 const double
     BGWidth = 0.1,
     BGTop = 0.4,
     BGBottom = 0.1;
+//绝对前景－脸
+const double
+    FGFaceTop = 0.10,
+    FGFaceSide = -0.20,
+    FGFaceBottom = -0.20;
+//绝对前景-颈
+const double
+    FGNeckSide = -0.3;
 
 cv::Point CenterOf(const cv::Rect& rect)
 {
@@ -27,6 +38,47 @@ cv::Point CenterOf(const cv::Rect& rect)
 cv::Rect WholeArea(const cv::Mat& image)
 {
     return cv::Rect(0, 0, image.cols, image.rows);
+}
+
+cv::Point TopLeft(const cv::Mat& image)
+{
+    return cv::Point(0,0);
+}
+
+cv::Point TopRight(const cv::Mat& image)
+{
+    return cv::Point(image.cols - 1, 0);
+}
+
+cv::Point BottomLeft(const cv::Mat& image)
+{
+    return cv::Point(0, image.rows - 1);
+}
+
+cv::Point TopLeft(const cv::Rect& rect)
+{
+    return cv::Point(rect.x, rect.y);
+}
+
+cv::Point TopRight(const cv::Rect& rect)
+{
+    return cv::Point(rect.x + rect.width, rect.y);
+}
+
+cv::Point BottomLeft(const cv::Rect& rect)
+{
+    return cv::Point(rect.x, rect.y + rect.height);
+}
+
+cv::Point BottomRight(const cv::Rect& rect)
+{
+    return cv::Point(rect.x + rect.width, rect.y + rect.height);
+}
+
+
+cv::Point BottomRight(const cv::Mat& image)
+{
+    return cv::Point(image.cols - 1, image.rows - 1);
 }
 
 bool Inside(const cv::Rect& rect_inner, const cv::Rect& rect_outter)
@@ -58,6 +110,11 @@ cv::Rect OverlapArea(const cv::Rect& rect1, const cv::Rect& rect2)
             overlap_top,
             overlap_right - overlap_left,
             overlap_bottom - overlap_top);
+}
+
+cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset)
+{
+    return cv::Rect(TopLeft(rect1) - offset, rect1.size());
 }
 
 int ModulusOf(const cv::Vec3i& vec)
@@ -112,6 +169,51 @@ cv::Rect ResizeFace(
                      face_resize_to.height);
 }
 
+static void DrawMask(
+    cv::Mat& image,
+    const cv::Rect& face_area,
+    bool clear,
+    const cv::Scalar& clear_with_color,
+    const cv::Scalar& front_color,
+    const cv::Scalar& back_color,
+    int thickness )
+{
+    //几条分割线
+    int bg_up = face_area.y - face_area.height * BGTop;
+    int bg_down = face_area.y + face_area.height * (1 + BGBottom);
+    int bg_left = face_area.x - face_area.width * BGWidth;
+    int bg_right = face_area.x + face_area.width * (1 + BGWidth);
+    int fgface_up = face_area.y - face_area.height * FGFaceTop;
+    int fgface_down = face_area.y + face_area.height * (1 + FGFaceBottom);
+    int fgface_left = face_area.x - face_area.width * FGFaceSide;
+    int fgface_right = face_area.x + face_area.width * (1 + FGFaceSide);
+    int fgneck_left = face_area.x - face_area.width * FGNeckSide;
+    int fgneck_right = face_area.x + face_area.width * (1 + FGNeckSide);
+
+    if (clear)
+        cv::rectangle(image, WholeArea(image), clear_with_color, CV_FILLED);
+    cv::rectangle(image,
+                  TopLeft(image),
+                  cv::Point(bg_left - 1, bg_down - 1),
+                  back_color, thickness);
+    cv::rectangle(image,
+                  TopRight(image),
+                  cv::Point(bg_right - 1, bg_down - 1),
+                  back_color, thickness);
+    cv::rectangle(image,
+                  cv::Point(bg_left, 0),
+                  cv::Point(bg_right - 1, bg_up - 1),
+                  back_color, thickness);
+    cv::rectangle(image,
+                  cv::Point(fgface_left, fgface_up),
+                  cv::Point(fgface_right - 1, fgface_down - 1),
+                  front_color, thickness);
+    cv::rectangle(image,
+                  cv::Point(fgneck_left, fgface_down),
+                  cv::Point(fgneck_right - 1, image.rows - 1),
+                  front_color, thickness);
+}
+
 cv::Mat GetFrontBackMask(
     const cv::Mat& image,
     const cv::Rect& face_area)
@@ -121,23 +223,8 @@ cv::Mat GetFrontBackMask(
         << SHOW(image.rows)
         << SHOW(image.cols);
 
-    //几条分割线
-    int up = face_area.y - face_area.height * BGTop;
-    int down = face_area.y + face_area.height * (1 + BGBottom);
-    int left = face_area.x - face_area.width * BGWidth;
-    int right = face_area.x + face_area.width * (1 + BGBottom);
-
-    //cv::grabCut的初始掩码
     cv::Mat mask_grab(image.rows, image.cols, CV_8UC1);
-    for (int r = 0 ; r < mask_grab.rows ; r++)
-        for (int c = 0 ; c < mask_grab.cols ; c++)
-        {
-            uint8_t& m = mask_grab.at<uint8_t>(r,c);
-            if (((c < left || c >= right) && r < down) || r < up)
-                m = cv::GC_BGD;
-            else
-                m = cv::GC_PR_FGD;
-        }
+    DrawMask(mask_grab, face_area, true, cv::GC_PR_FGD, cv::GC_FGD, cv::GC_BGD, CV_FILLED);
 
     //抠图
     cv::Mat bgModel,fgModel; //临时空间
@@ -228,6 +315,16 @@ cv::Mat GetFrontBackMask(
     return result;
 }
 
+void DrawGrabCutLines(
+    cv::Mat& image,
+    const cv::Rect& face_area)
+{
+    DrawMask(image, face_area,
+             false, cv::Scalar(0,0,0),
+             cv::Scalar(255,0,0), cv::Scalar(0,0,255),
+             1);
+}
+
 cv::Mat Mix(
     const cv::Mat& image,
     const cv::Mat& raw,
@@ -243,11 +340,8 @@ cv::Mat Mix(
 
             const cv::Vec3b& src = image.at<cv::Vec3b>(r,c);
             cv::Vec3b& mix = image_mix.at<cv::Vec3b>(r,c);
-            mix = src;
-
-            if (alpha < 255) //替换背景
-                mix += ((cv::Vec3i)back_color - (cv::Vec3i)backc)
-                    * (1 - (double)alpha / 255);
+            mix = (cv::Vec3i)src + (cv::Vec3i)((cv::Vec3i)back_color - (cv::Vec3i)backc)
+                        * (1 - (double)alpha / 255);
         }
     return image_mix;
 }

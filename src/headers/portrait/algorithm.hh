@@ -12,12 +12,26 @@ namespace portrait {
 cv::Point CenterOf(const cv::Rect& rect);
 // 返回一个x=0、y=0，width和height等于image尺寸的矩形。
 cv::Rect WholeArea(const cv::Mat& image);
+//四个角的像素坐标
+cv::Point TopLeft(const cv::Mat& image);
+cv::Point TopRight(const cv::Mat& image);
+cv::Point BottomLeft(const cv::Mat& image);
+cv::Point BottomRight(const cv::Mat& image);
+cv::Point TopLeft(const cv::Rect& rect);
+cv::Point TopRight(const cv::Rect& rect);
+cv::Point BottomLeft(const cv::Rect& rect);
+cv::Point BottomRight(const cv::Rect& rect);
+
 // 检查rect_outter是否完全包含rect_inner
 bool Inside(const cv::Rect& rect_inner, const cv::Rect& rect_outter);
 // 检查rect_inner是否完全在image范围内
 bool Inside(const cv::Rect& rect_inner, const cv::Mat& image);
 // 获取rect1和rect2重叠部分
 cv::Rect OverlapArea(const cv::Rect& rect1, const cv::Rect& rect2);
+// 计算Rect(rect1.point - offset, rect1.size)
+cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset);
+
+int ModulusOf(const cv::Vec3i& vec);
 
 /* 给出图像（image）和其中人脸的位置（face_area），
  * 按max_up_expand、max_down_expand、max_width_expand指定的上下左右范围，
@@ -50,6 +64,12 @@ cv::Rect ResizeFace(
  */
 cv::Mat GetFrontBackMask(
     const cv::Mat& image,
+    const cv::Rect& face_area);
+
+/* 画出一些用于调试的辅助线，展示绝对前景、绝对背景等区域。
+ */
+void DrawGrabCutLines(
+    cv::Mat& image,
     const cv::Rect& face_area);
 
 /* 使用GetFrontBackMask返回的抠像结果，替换image中的背景。

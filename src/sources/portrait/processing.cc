@@ -15,7 +15,7 @@ cv::Mat PortraitProcessAll(
     const int VerticalOffset,
     const cv::Vec3b& back_color)
 {
-    SemiData semi = PortraitProcessSemi(std::move(photo), face_resize_to);
+    const SemiData semi = PortraitProcessSemi(std::move(photo), face_resize_to);
     return PortraitMix(semi, portrait_size, VerticalOffset, back_color);
 }
 
@@ -73,7 +73,7 @@ SemiData PortraitProcessSemi(
     photo = cv::Mat();
 
     data.face_area = DetectSingleFace(data.image);
-    data.face_area = TryCutPortrait(data.image, data.face_area, 0.6, 0.6, 0.3);
+    data.face_area = TryCutPortrait(data.image, data.face_area, 0.6, 0.6, 0.4);
     data.face_area = ResizeFace(data.image, data.face_area,
                                 cv::Size(face_resize_to, face_resize_to));
     data.raw = GetFrontBackMask(data.image, data.face_area);
@@ -97,11 +97,14 @@ cv::Mat PortraitMix(
                       portrait_size.height);
     if (!Inside(cut_area, data.image))
         throw Error(OutOfRange);
-    cv::Mat img_cut = data.image(cut_area);
-    cv::Mat raw_cut = data.raw(cut_area);
+    std::cout<<cut_area<<std::endl;
 
     //混合
-    cv::Mat mix = Mix(img_cut, raw_cut, back_color);
+    cv::Mat mix = Mix(data.image(cut_area), data.raw(cut_area), back_color);
+#ifdef _DEBUG
+    DrawGrabCutLines(mix, SubArea(data.face_area, TopLeft(cut_area)));
+#endif
+
     return mix;
 }
 

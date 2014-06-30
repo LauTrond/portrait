@@ -52,7 +52,8 @@ int main(int argc, char** argv)
         {
             //抠图
             SemiData semi = PortraitProcessSemi(std::move(frame), FaceResizeTo);
-            cv::imshow(WindowName + "_src", semi.GetImage());
+            std::cout<<"GrabCut Cose: "<<(common::DateTime::Now() - start_time)<<std::endl;
+            cv::imshow(WindowName + "_src", semi.GetImageWithLines());
 
             //针对每种背景色混合背景
             for (int i = 0 ; i < NewBackColor.size() ; i++)
@@ -72,8 +73,7 @@ int main(int argc, char** argv)
         }
 
         //显示耗时
-        common::DateTime finish_time = common::DateTime::Now();
-        std::cout<<"Cost: "<<(finish_time - start_time)<<std::endl;
+        std::cout<<"Cost: "<<(common::DateTime::Now() - start_time)<<std::endl;
     }
     return 0;
 }

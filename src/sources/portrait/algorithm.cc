@@ -11,23 +11,23 @@ const int
     BorderSize = 3,
     MixSize = BorderSize * 2 + 1;
 
-const int GrabCutInteration = 1;
+const int GrabCutInteration = 3;
 
 //以下多个常数定义前景、背景划分的关键数值，全是检测出人脸矩形的长宽比例。
 
 //背景
 const double
-    BGWidth = 0.1,
-    BGTop = 0.4,
-    BGBottom = 0.1;
+    BGWidth = 0.15,
+    BGTop = 0.50,
+    BGBottom = 0.10;
 //绝对前景－脸
 const double
     FGFaceTop = 0.10,
     FGFaceSide = -0.20,
-    FGFaceBottom = -0.20;
+    FGFaceBottom = -0.30;
 //绝对前景-颈
 const double
-    FGNeckSide = -0.3;
+    FGNeckSide = -0.35;
 
 cv::Point CenterOf(const cv::Rect& rect)
 {

@@ -27,6 +27,7 @@ public:
 public:
     void* Get() const throw();
     cv::Mat GetImage() const;
+    cv::Mat GetImageWithLines() const;
 private:
     void* _data;
 };

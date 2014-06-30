@@ -62,6 +62,13 @@ cv::Mat SemiData::GetImage() const
 {
     return ((SemiDataImpl*)_data)->image;
 }
+cv::Mat SemiData::GetImageWithLines() const
+{
+    cv::Mat tmp;
+    ((SemiDataImpl*)_data)->image.copyTo(tmp);
+    DrawGrabCutLines(tmp, ((SemiDataImpl*)_data)->face_area);
+    return tmp;
+}
 
 SemiData PortraitProcessSemi(
     cv::Mat&& photo, //CV_8UC3
@@ -97,13 +104,9 @@ cv::Mat PortraitMix(
                       portrait_size.height);
     if (!Inside(cut_area, data.image))
         throw Error(OutOfRange);
-    std::cout<<cut_area<<std::endl;
 
     //混合
     cv::Mat mix = Mix(data.image(cut_area), data.raw(cut_area), back_color);
-#ifdef _DEBUG
-    DrawGrabCutLines(mix, SubArea(data.face_area, TopLeft(cut_area)));
-#endif
 
     return mix;
 }

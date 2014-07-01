@@ -12,7 +12,7 @@ const int
     BorderSize = 3,
     MixSize = BorderSize * 2 + 1;
 
-const int GrabCutInteration = 2;
+const int GrabCutInteration = 3;
 //GrabCut的图片大小
 const double
     GrabCutWidthScale = 0.5,
@@ -345,7 +345,8 @@ cv::Mat GetFrontBackMask(
                         cv::Vec3i cur = (cv::Vec3i)image.at<cv::Vec3b>(r,c);
                         int dist_back = cnt_front * ModulusOf(sum_back - cur * cnt_back);
                         int dist_front = cnt_back * ModulusOf(sum_front - cur * cnt_front);
-                        alpha = 255 * dist_back / (dist_front + dist_back);
+                        if (dist_front + dist_back > 0)
+                            alpha = 255 * dist_back / (dist_front + dist_back);
                     }
                     else if (cnt_back > 0 || cnt_front > 0)
                     {

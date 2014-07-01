@@ -1,0 +1,88 @@
+#include <iostream>
+#include <exception>
+
+#include "opencv2/opencv.hpp"
+
+#include "portrait/portrait.hh"
+#include "sybie/common/Time.hh"
+
+using namespace portrait;
+
+const std::string WindowName = "Potrait";
+enum { FaceResizeTo = 200 };
+enum { PortraitWidth = 250, PortraitHeight = 350 };
+
+const std::vector<cv::Vec3b> NewBackColor({
+{243, 191, 0},
+{0, 0, 255},
+{240, 240, 240}
+});
+
+int main(int argc, char** argv)
+{
+    cv::namedWindow(WindowName + "_src", CV_WINDOW_AUTOSIZE);
+    for (int i = 0 ; i < NewBackColor.size() ; i++)
+        cv::namedWindow(WindowName + std::to_string(i), CV_WINDOW_AUTOSIZE);
+
+    if (argc < 2)
+    {
+        std::cout<<"Usage: imgtest <files...>"<<std::endl;
+        return 1;
+    }
+
+    int index = 1; //显示的文件索引
+    while (true)
+    {
+        const std::string filename(argv[index]);
+        cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
+
+        try
+        {
+            //抠图
+            SemiData semi = PortraitProcessSemi(std::move(image), FaceResizeTo);
+            cv::Mat semi_image = semi.GetImageWithLines();
+            cv::putText(semi_image, filename, cv::Point(0,30),
+                        cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,255,0));
+            cv::imshow(WindowName + "_src", semi_image);
+
+            //针对每种背景色混合背景
+            for (int i = 0 ; i < NewBackColor.size() ; i++)
+            {
+                //混合
+                cv::Mat img_mix = PortraitMix(
+                    semi, cv::Size(PortraitWidth, PortraitHeight),
+                    0, NewBackColor[i]);
+                //显示结果
+                cv::imshow(WindowName + std::to_string(i), img_mix);
+            }
+        }
+        catch (std::exception& err)
+        {
+            std::cout << "Error: " << err.what() << std::endl;
+        }
+
+        while (true)
+        {
+            int key = cv::waitKey(0);
+            if (key == 27)
+                return 0;
+            if (key == ',')
+            {
+                index--;
+                if (index == 0)
+                    index = argc - 1;
+                break;
+            }
+            if (key == '.')
+            {
+                index++;
+                if (index == argc)
+                    index = 1;
+                break;
+            }
+        }
+
+    }
+
+    return 0;
+}

@@ -6,7 +6,6 @@
 #include "portrait/portrait.hh"
 #include "sybie/common/Time.hh"
 
-using namespace sybie;
 using namespace portrait;
 
 const std::string WindowName = "Potrait";
@@ -46,13 +45,13 @@ int main(int argc, char** argv)
             break;
 
         //开始计时
-        common::DateTime start_time = common::DateTime::Now();
+        sybie::common::StatingTestTimer::ResetAll();
+        sybie::common::StatingTestTimer timer("All");
 
         try
         {
             //抠图
             SemiData semi = PortraitProcessSemi(std::move(frame), FaceResizeTo);
-            std::cout<<"GrabCut Cose: "<<(common::DateTime::Now() - start_time)<<std::endl;
             cv::imshow(WindowName + "_src", semi.GetImageWithLines());
 
             //针对每种背景色混合背景
@@ -72,8 +71,8 @@ int main(int argc, char** argv)
             continue;
         }
 
-        //显示耗时
-        std::cout<<"Cost: "<<(common::DateTime::Now() - start_time)<<std::endl;
+        timer.Finish();
+        sybie::common::StatingTestTimer::ShowAll(std::cout);
     }
     return 0;
 }

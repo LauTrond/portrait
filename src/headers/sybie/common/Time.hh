@@ -138,9 +138,11 @@ public:
 public:
     explicit StatingTestTimer(const std::string& stat_key = "");
     ~StatingTestTimer();
+    void Finish();
 private:
     const std::string _stat_key;
     const DateTime _start_time;
+    bool _finished;
 }; //class StatingTestTimer
 
 class FrequencyTimer : Uncopyable

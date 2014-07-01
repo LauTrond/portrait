@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "sybie/common/RichAssert.hh"
+#include "sybie/common/Time.hh"
 
 namespace portrait {
 
@@ -11,7 +12,7 @@ const int
     BorderSize = 3,
     MixSize = BorderSize * 2 + 1;
 
-const int GrabCutInteration = 3;
+const int GrabCutInteration = 1;
 
 //以下多个常数定义前景、背景划分的关键数值，全是检测出人脸矩形的长宽比例。
 
@@ -19,11 +20,11 @@ const int GrabCutInteration = 3;
 const double
     BGWidth = 0.15,
     BGTop = 0.50,
-    BGBottom = 0.10;
+    BGBottom = 0.00;
 //绝对前景－脸
 const double
-    FGFaceTop = 0.10,
-    FGFaceSide = -0.20,
+    FGFaceTop = 0.05,
+    FGFaceSide = -0.25,
     FGFaceBottom = -0.30;
 //绝对前景-颈
 const double
@@ -218,99 +219,127 @@ cv::Mat GetFrontBackMask(
     const cv::Mat& image,
     const cv::Rect& face_area)
 {
+    sybie::common::StatingTestTimer timer("GetFrontBackMask");
     sybie_assert(Inside(face_area, image))
         << SHOW(face_area)
         << SHOW(image.rows)
         << SHOW(image.cols);
 
+    //初始化前景/背景掩码
     cv::Mat mask_grab(image.rows, image.cols, CV_8UC1);
-    DrawMask(mask_grab, face_area, true, cv::GC_PR_FGD, cv::GC_FGD, cv::GC_BGD, CV_FILLED);
-
+    DrawMask(mask_grab, face_area, true, cv::GC_PR_FGD,
+             cv::GC_FGD, cv::GC_BGD, CV_FILLED);
     //抠图
-    cv::Mat bgModel,fgModel; //临时空间
-    cv::grabCut(image, mask_grab, cv::Rect(),
-                bgModel,fgModel,
-                GrabCutInteration, cv::GC_INIT_WITH_MASK);
+    {
+        sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut");
+
+        cv::Mat bgModel,fgModel; //前景模型、背景模型
+        cv::Size small_size(image.cols / 4, image.rows / 4); //缩略图尺寸
+        cv::Mat image_small, mask_grab_small; //缩略图
+        cv::resize(image, image_small, small_size, 0, 0, cv::INTER_NEAREST);
+        cv::resize(mask_grab, mask_grab_small, small_size, 0, 0, cv::INTER_NEAREST);
+        //用缩略图初始化模型
+        {
+            sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut.Init");
+            cv::grabCut(image_small, mask_grab_small, cv::Rect(),
+                        bgModel,fgModel,
+                        0, cv::GC_INIT_WITH_MASK);
+        }
+        //开始抠图迭代
+        {
+            sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut.Eval");
+            cv::grabCut(image, mask_grab, cv::Rect(),
+                        bgModel,fgModel,
+                        GrabCutInteration, cv::GC_EVAL);
+        }
+    }
 
     //找出边缘像素
     cv::Mat mask_border(image.rows, image.cols, CV_8UC1);
-    for (int r = 0 ; r < image.rows ; r++)
-        for (int c = 0 ; c < image.cols ; c++)
-        {
-            uint8_t& mb = mask_border.at<uint8_t>(r,c);
-            bool has_front = false;
-            bool has_back = false;
-            for (int rr = std::max(r-BorderSize,0) ;
-                     rr <= std::min(r+BorderSize,image.rows-1) ;
-                     rr++)
-                for (int cc = std::max(c-BorderSize,0) ;
-                         cc <= std::min(c+BorderSize,image.cols-1) ;
-                         cc++)
-                {
-                    uint8_t& m = mask_grab.at<uint8_t>(rr,cc);
-                    if (m == cv::GC_BGD || m == cv::GC_PR_BGD)
-                        has_back = true;
-                    else
-                        has_front = true;
-                }
-            if (has_front && has_back)
-                mb = 128;
-            else if (has_front)
-                mb = 255;
-            else
-                mb = 0;
-        }
-
-    //计算背景色和Alpha
-    cv::Mat result(image.rows, image.cols, CV_8UC4);
-    for (int r = 0 ; r < image.rows ; r++)
-        for (int c = 0 ; c < image.cols ; c++)
-        {
-            uint8_t& mb = mask_border.at<uint8_t>(r,c);
-
-            cv::Vec4b& p = result.at<cv::Vec4b>(r,c);
-            uint8_t& alpha = p[3];
-            cv::Vec3b& backc = *(cv::Vec3b*)(void*)&p;
-
-            alpha = mb; //默认混合
-            backc = image.at<cv::Vec3b>(r,c); //默认背色
-
-            if (mb == 128) //边缘像素，计算混合比例
+    {
+        sybie::common::StatingTestTimer timer("GetFrontBackMask.FindBorder");
+        for (int r = 0 ; r < image.rows ; r++)
+            for (int c = 0 ; c < image.cols ; c++)
             {
-                int cnt_back = 0, cnt_front = 0;
-                cv::Vec3i sum_back(0,0,0), sum_front(0,0,0);
-
-                for (int rr = std::max(r-MixSize,0) ;
-                         rr <= std::min(r+MixSize,image.rows-1) ;
+                uint8_t& mb = mask_border.at<uint8_t>(r,c);
+                bool has_front = false;
+                bool has_back = false;
+                for (int rr = std::max(r-BorderSize,0) ;
+                         rr <= std::min(r+BorderSize,image.rows-1) ;
                          rr++)
-                    for (int cc = std::max(c-MixSize,0) ;
-                             cc <= std::min(c+MixSize,image.cols-1) ;
+                    for (int cc = std::max(c-BorderSize,0) ;
+                             cc <= std::min(c+BorderSize,image.cols-1) ;
                              cc++)
                     {
-                        uint8_t& mbrange = mask_border.at<uint8_t>(rr,cc);
-                        const cv::Vec3b& pixel = image.at<cv::Vec3b>(rr,cc);
-                        if (mbrange == 0)
-                            sum_back += pixel, cnt_back++;
-                        if (mbrange == 255)
-                            sum_front += pixel, cnt_front++;
+                        uint8_t& m = mask_grab.at<uint8_t>(rr,cc);
+                        if (m == cv::GC_BGD || m == cv::GC_PR_BGD)
+                            has_back = true;
+                        else
+                            has_front = true;
+                    }
+                if (has_front && has_back)
+                    mb = 128;
+                else if (has_front)
+                    mb = 255;
+                else
+                    mb = 0;
+            }
+    }
+
+    //计算边缘的混合比例
+
+    cv::Mat result(image.rows, image.cols, CV_8UC4);
+    {
+        sybie::common::StatingTestTimer timer("GetFrontBackMask.CalcAlpha");
+        for (int r = 0 ; r < image.rows ; r++)
+            for (int c = 0 ; c < image.cols ; c++)
+            {
+                uint8_t& mb = mask_border.at<uint8_t>(r,c);
+
+                cv::Vec4b& p = result.at<cv::Vec4b>(r,c);
+                uint8_t& alpha = p[3];
+                cv::Vec3b& backc = *(cv::Vec3b*)(void*)&p;
+
+                alpha = mb; //默认混合
+                backc = image.at<cv::Vec3b>(r,c); //默认背色
+
+                if (mb == 128) //边缘像素，计算混合比例
+                {
+                    int cnt_back = 0, cnt_front = 0;
+                    cv::Vec3i sum_back(0,0,0), sum_front(0,0,0);
+
+                    for (int rr = std::max(r-MixSize,0) ;
+                             rr <= std::min(r+MixSize,image.rows-1) ;
+                             rr++)
+                        for (int cc = std::max(c-MixSize,0) ;
+                                 cc <= std::min(c+MixSize,image.cols-1) ;
+                                 cc++)
+                        {
+                            uint8_t& mbrange = mask_border.at<uint8_t>(rr,cc);
+                            const cv::Vec3b& pixel = image.at<cv::Vec3b>(rr,cc);
+                            if (mbrange == 0)
+                                sum_back += pixel, cnt_back++;
+                            if (mbrange == 255)
+                                sum_front += pixel, cnt_front++;
+                        }
+
+                    if (cnt_back > 0 && cnt_front > 0)
+                    {
+                        cv::Vec3i cur = (cv::Vec3i)image.at<cv::Vec3b>(r,c);
+                        int dist_back = cnt_front * ModulusOf(sum_back - cur * cnt_back);
+                        int dist_front = cnt_back * ModulusOf(sum_front - cur * cnt_front);
+                        alpha = 255 * dist_back / (dist_front + dist_back);
+                    }
+                    else if (cnt_back > 0 || cnt_front > 0)
+                    {
+                        alpha = 255 * cnt_front / (cnt_back + cnt_front);
                     }
 
-                if (cnt_back > 0 && cnt_front > 0)
-                {
-                    cv::Vec3i cur = (cv::Vec3i)image.at<cv::Vec3b>(r,c);
-                    int dist_back = cnt_front * ModulusOf(sum_back - cur * cnt_back);
-                    int dist_front = cnt_back * ModulusOf(sum_front - cur * cnt_front);
-                    alpha = 255 * dist_back / (dist_front + dist_back);
+                    if (cnt_back > 0)
+                        backc = sum_back / cnt_back;
                 }
-                else if (cnt_back > 0 || cnt_front > 0)
-                {
-                    alpha = 255 * cnt_front / (cnt_back + cnt_front);
-                }
-
-                if (cnt_back > 0)
-                    backc = sum_back / cnt_back;
             }
-        }
+    }
 
     return result;
 }

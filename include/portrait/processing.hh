@@ -17,6 +17,7 @@ cv::Mat PortraitProcessAll(
 struct SemiData
 {
 public:
+    SemiData() throw();
     explicit SemiData(void* data) throw();
     SemiData(const SemiData&) = delete;
     SemiData(SemiData&& another) throw();

@@ -561,13 +561,23 @@ void StatingTestTimer::ResetAll()
 }
 
 StatingTestTimer::StatingTestTimer(const std::string& stat_key)
-    : _stat_key(stat_key)
-     ,_start_time(DateTime::Now())
+    : _stat_key(stat_key),
+      _start_time(DateTime::Now()),
+      _finished(false)
 { }
 
 StatingTestTimer::~StatingTestTimer()
 {
-    StatingTestTimerGlobal::Get().Add(_stat_key, DateTime::Now() - _start_time);
+    Finish();
+}
+
+void StatingTestTimer::Finish()
+{
+    if (!_finished)
+    {
+        StatingTestTimerGlobal::Get().Add(_stat_key, DateTime::Now() - _start_time);
+        _finished = true;
+    }
 }
 
 class FrequencyTimerImpl : common::Uncopyable

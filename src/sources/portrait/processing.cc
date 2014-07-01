@@ -27,6 +27,10 @@ public:
     cv::Rect face_area;
 }; //struct SemiDataImpl
 
+SemiData::SemiData() throw()
+    : _data(nullptr)
+{ }
+
 SemiData::SemiData(void* data) throw()
     : _data(data)
 { }

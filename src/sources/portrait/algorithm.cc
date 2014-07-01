@@ -17,6 +17,9 @@ const int GrabCutInteration = 2;
 const double
     GrabCutWidthScale = 0.5,
     GrabCutHeightScale = 0.5;
+const double
+    GrabCutInitWidthScale = 0.2,
+    GrabCutInitHeightScale = 0.2;
 
 //以下多个常数定义前景、背景划分的关键数值，全是检测出人脸矩形的长宽比例。
 
@@ -230,24 +233,41 @@ cv::Mat GetFrontBackMask(
         << SHOW(image.cols);
 
     //初始化前景/背景掩码
-    cv::Mat mask_grab(image.rows, image.cols, CV_8UC1);
-    DrawMask(mask_grab, face_area, true, cv::GC_PR_FGD,
+    cv::Mat mask(image.rows, image.cols, CV_8UC1);
+    DrawMask(mask, face_area, true, cv::GC_PR_FGD,
              cv::GC_FGD, cv::GC_BGD, CV_FILLED);
     //抠图
     {
         sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut");
 
+        cv::Size full_size(image.cols,
+                           image.rows); //缩略图尺寸
+        cv::Size grab_size(image.cols * GrabCutWidthScale,
+                           image.rows * GrabCutHeightScale); //GrabCut缩略图尺寸
+        cv::Size init_size(image.cols * GrabCutInitWidthScale,
+                           image.rows * GrabCutInitHeightScale); //GrabCut初始化尺寸
+
         cv::Mat bgModel,fgModel; //前景模型、背景模型
-        cv::Size small_size(image.cols * GrabCutWidthScale,
-                            image.rows * GrabCutHeightScale); //缩略图尺寸
-        cv::Mat image_small, mask_grab_small; //缩略图
-        cv::resize(image, image_small, small_size, 0, 0, cv::INTER_NEAREST);
-        cv::resize(mask_grab, mask_grab_small, small_size, 0, 0, cv::INTER_NEAREST);
-        cv::grabCut(image_small, mask_grab_small, cv::Rect(),
+
+        //初始化模型
+        cv::Mat image_init, mask_init;
+        cv::resize(image, image_init, init_size, 0, 0, cv::INTER_NEAREST);
+        cv::resize(mask, mask_init, init_size, 0, 0, cv::INTER_NEAREST);
+        cv::grabCut(image_init, mask_init, cv::Rect(),
                     bgModel,fgModel,
-                    GrabCutInteration, cv::GC_INIT_WITH_MASK);
-        cv::resize(mask_grab_small, mask_grab,
-                   cv::Size(image.cols, image.rows), 0, 0,
+                    0, cv::GC_INIT_WITH_MASK);
+
+        //抠图
+        cv::Mat image_grab, mask_grab;
+        cv::resize(image, image_grab, grab_size, 0, 0, cv::INTER_NEAREST);
+        cv::resize(mask, mask_grab, grab_size, 0, 0, cv::INTER_NEAREST);
+        cv::grabCut(image_grab, mask_grab, cv::Rect(),
+                    bgModel,fgModel,
+                    GrabCutInteration, cv::GC_EVAL);
+
+        //抠图结果恢复到最大尺寸
+        cv::resize(mask_grab, mask,
+                   full_size, 0, 0,
                    cv::INTER_NEAREST);
     }
 
@@ -268,7 +288,7 @@ cv::Mat GetFrontBackMask(
                              cc <= std::min(c+BorderSize,image.cols-1) ;
                              cc++)
                     {
-                        uint8_t& m = mask_grab.at<uint8_t>(rr,cc);
+                        uint8_t& m = mask.at<uint8_t>(rr,cc);
                         if (m == cv::GC_BGD || m == cv::GC_PR_BGD)
                             has_back = true;
                         else

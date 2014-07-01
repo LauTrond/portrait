@@ -75,7 +75,7 @@ cv::Mat SemiData::GetImageWithLines() const
 }
 
 SemiData PortraitProcessSemi(
-    cv::Mat&& photo, //CV_8UC3
+    cv::Mat&& photo,
     const int face_resize_to)
 {
     SemiData semi(new SemiDataImpl());
@@ -83,7 +83,9 @@ SemiData PortraitProcessSemi(
     data.image = photo;
     photo = cv::Mat();
 
-    data.face_area = DetectSingleFace(data.image);
+    cv::Mat image_gray;
+    cv::cvtColor(data.image,image_gray,CV_BGR2GRAY);
+    data.face_area = DetectSingleFace(image_gray);
     data.face_area = TryCutPortrait(data.image, data.face_area, 0.6, 0.6, 0.4);
     data.face_area = ResizeFace(data.image, data.face_area,
                                 cv::Size(face_resize_to, face_resize_to));

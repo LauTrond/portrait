@@ -34,7 +34,7 @@ private:
 };
 
 SemiData PortraitProcessSemi(
-    cv::Mat&& photo, //CV_8UC3
+    cv::Mat&& photo, //CV_8UC3 BGR
     const int face_resize_to);
 
 cv::Mat PortraitMix(

@@ -12,7 +12,7 @@ namespace portrait {
 void InitFaceDetect();
 
 //检测人脸
-//image是CV_8UC3（BGR）
+//image是CV_8UC1（Gray）
 std::vector<cv::Rect> DetectFaces(const cv::Mat& image);
 
 //检测单个人脸

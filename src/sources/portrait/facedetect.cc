@@ -37,12 +37,9 @@ void InitFaceDetect()
 
 std::vector<cv::Rect> DetectFaces(const cv::Mat& image)
 {
-    cv::Mat frame_gray;
-    cv::cvtColor(image, frame_gray, CV_BGR2GRAY);
-
     std::vector<cv::Rect> faces;
     GetFaceCascadeClassifier().detectMultiScale(
-        frame_gray, faces, 1.1, 2,
+        image, faces, 1.1, 2,
         0|CV_HAAR_SCALE_IMAGE, cv::Size(64, 64));
     return faces;
 }

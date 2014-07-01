@@ -12,7 +12,11 @@ const int
     BorderSize = 3,
     MixSize = BorderSize * 2 + 1;
 
-const int GrabCutInteration = 1;
+const int GrabCutInteration = 2;
+//GrabCut的图片大小
+const double
+    GrabCutWidthScale = 0.5,
+    GrabCutHeightScale = 0.5;
 
 //以下多个常数定义前景、背景划分的关键数值，全是检测出人脸矩形的长宽比例。
 
@@ -234,24 +238,17 @@ cv::Mat GetFrontBackMask(
         sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut");
 
         cv::Mat bgModel,fgModel; //前景模型、背景模型
-        cv::Size small_size(image.cols / 4, image.rows / 4); //缩略图尺寸
+        cv::Size small_size(image.cols * GrabCutWidthScale,
+                            image.rows * GrabCutHeightScale); //缩略图尺寸
         cv::Mat image_small, mask_grab_small; //缩略图
         cv::resize(image, image_small, small_size, 0, 0, cv::INTER_NEAREST);
         cv::resize(mask_grab, mask_grab_small, small_size, 0, 0, cv::INTER_NEAREST);
-        //用缩略图初始化模型
-        {
-            sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut.Init");
-            cv::grabCut(image_small, mask_grab_small, cv::Rect(),
-                        bgModel,fgModel,
-                        0, cv::GC_INIT_WITH_MASK);
-        }
-        //开始抠图迭代
-        {
-            sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut.Eval");
-            cv::grabCut(image, mask_grab, cv::Rect(),
-                        bgModel,fgModel,
-                        GrabCutInteration, cv::GC_EVAL);
-        }
+        cv::grabCut(image_small, mask_grab_small, cv::Rect(),
+                    bgModel,fgModel,
+                    GrabCutInteration, cv::GC_INIT_WITH_MASK);
+        cv::resize(mask_grab_small, mask_grab,
+                   cv::Size(image.cols, image.rows), 0, 0,
+                   cv::INTER_NEAREST);
     }
 
     //找出边缘像素

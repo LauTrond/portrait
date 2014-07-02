@@ -25,7 +25,7 @@ const double
 
 //背景
 const double
-    BGWidth = 0.15,
+    BGWidth = 0.20,
     BGTop = 0.50,
     BGBottom = 0.00;
 //绝对前景－脸
@@ -36,6 +36,9 @@ const double
 //绝对前景-颈
 const double
     FGNeckSide = -0.35;
+const double
+    FGBodyTop = 0.30,
+    FGBodySide = 0.00;
 
 cv::Point CenterOf(const cv::Rect& rect)
 {
@@ -197,6 +200,9 @@ static void DrawMask(
     int fgface_right = face_area.x + face_area.width * (1 + FGFaceSide);
     int fgneck_left = face_area.x - face_area.width * FGNeckSide;
     int fgneck_right = face_area.x + face_area.width * (1 + FGNeckSide);
+    int fgbody_up = face_area.y + face_area.height * (1 + FGBodyTop);
+    int fgbody_left = face_area.x - face_area.width * FGBodySide;
+    int fgbody_right = face_area.x + face_area.width * (1 + FGBodySide);
 
     if (clear)
         cv::rectangle(image, WholeArea(image), clear_with_color, CV_FILLED);
@@ -218,7 +224,11 @@ static void DrawMask(
                   front_color, thickness);
     cv::rectangle(image,
                   cv::Point(fgneck_left, fgface_down),
-                  cv::Point(fgneck_right - 1, image.rows - 1),
+                  cv::Point(fgneck_right - 1, fgbody_up - 1),
+                  front_color, thickness);
+    cv::rectangle(image,
+                  cv::Point(fgbody_left, fgbody_up),
+                  cv::Point(fgbody_right - 1, image.rows - 1),
                   front_color, thickness);
 }
 
@@ -251,7 +261,7 @@ cv::Mat GetFrontBackMask(
 
         //初始化模型
         cv::Mat image_init, mask_init;
-        cv::resize(image, image_init, init_size, 0, 0, cv::INTER_NEAREST);
+        cv::resize(image, image_init, init_size, 0, 0, cv::INTER_AREA);
         cv::resize(mask, mask_init, init_size, 0, 0, cv::INTER_NEAREST);
         cv::grabCut(image_init, mask_init, cv::Rect(),
                     bgModel,fgModel,
@@ -259,7 +269,7 @@ cv::Mat GetFrontBackMask(
 
         //抠图
         cv::Mat image_grab, mask_grab;
-        cv::resize(image, image_grab, grab_size, 0, 0, cv::INTER_NEAREST);
+        cv::resize(image, image_grab, grab_size, 0, 0, cv::INTER_AREA);
         cv::resize(mask, mask_grab, grab_size, 0, 0, cv::INTER_NEAREST);
         cv::grabCut(image_grab, mask_grab, cv::Rect(),
                     bgModel,fgModel,
@@ -370,6 +380,23 @@ void DrawGrabCutLines(
              false, cv::Scalar(0,0,0),
              cv::Scalar(255,0,0), cv::Scalar(0,0,255),
              1);
+}
+
+cv::Rect Extend(
+    cv::Mat& image,
+    const cv::Rect& area,
+    const cv::Scalar& border_pixel)
+{
+    int top = std::max(0, -area.y);
+    int bottom = std::max(0, area.y + area.height - image.rows);
+    int left = std::max(0, -area.x);
+    int right = std::max(0, area.x + area.width - image.cols);
+    cv::Mat image_new;
+    cv::copyMakeBorder(image, image_new,
+                       top, bottom, left, right,
+                       cv::BORDER_CONSTANT, border_pixel);
+    image = image_new;
+    return SubArea(area, cv::Point(-left, -top));
 }
 
 cv::Mat Mix(

@@ -1,6 +1,7 @@
 #include "portrait/processing.hh"
 
 #include <utility>
+#include <cassert>
 
 #include "portrait/exception.hh"
 #include "portrait/algorithm.hh"
@@ -15,7 +16,7 @@ cv::Mat PortraitProcessAll(
     const int VerticalOffset,
     const cv::Vec3b& back_color)
 {
-    const SemiData semi = PortraitProcessSemi(std::move(photo), face_resize_to);
+    SemiData semi = PortraitProcessSemi(std::move(photo), face_resize_to);
     return PortraitMix(semi, portrait_size, VerticalOffset, back_color);
 }
 
@@ -95,7 +96,7 @@ SemiData PortraitProcessSemi(
 }
 
 cv::Mat PortraitMix(
-    const SemiData& semi,
+    SemiData& semi,
     const cv::Size& portrait_size,
     const int VerticalOffset,
     const cv::Vec3b& back_color)
@@ -103,16 +104,23 @@ cv::Mat PortraitMix(
     SemiDataImpl& data = *(SemiDataImpl*)semi.Get();
     //裁剪
     cv::Point face_center = CenterOf(data.face_area);
-    cv::Rect cut_area(face_center.x - portrait_size.width / 2,
-                      face_center.y - portrait_size.height / 2
-                          + VerticalOffset,
-                      portrait_size.width,
-                      portrait_size.height);
-    if (!Inside(cut_area, data.image))
-        throw Error(OutOfRange);
+    cv::Rect crop_area(face_center.x - portrait_size.width / 2,
+                       face_center.y - portrait_size.height / 2
+                           + VerticalOffset,
+                       portrait_size.width,
+                       portrait_size.height);
+    if (!Inside(crop_area, data.image))
+    {
+        cv::Rect new_crop_area_1 = Extend(data.image, crop_area, cv::Scalar(0,0,0));
+        cv::Rect new_crop_area_2 = Extend(data.raw, crop_area, cv::Scalar(0,0,0,0));
+        assert(new_crop_area_1 == new_crop_area_2);
+        data.face_area.x += new_crop_area_1.x - crop_area.x;
+        data.face_area.y += new_crop_area_1.y - crop_area.y;
+        crop_area = new_crop_area_1;
+    }
 
-    //混合
-    cv::Mat mix = Mix(data.image(cut_area), data.raw(cut_area), back_color);
+    //替换背景
+    cv::Mat mix = Mix(data.image(crop_area), data.raw(crop_area), back_color);
 
     return mix;
 }

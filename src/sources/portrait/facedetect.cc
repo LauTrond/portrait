@@ -40,7 +40,7 @@ std::vector<cv::Rect> DetectFaces(const cv::Mat& image)
     std::vector<cv::Rect> faces;
     GetFaceCascadeClassifier().detectMultiScale(
         image, faces, 1.1, 2,
-        0|CV_HAAR_SCALE_IMAGE, cv::Size(64, 64));
+        0|CV_HAAR_SCALE_IMAGE, cv::Size(128, 128));
     return faces;
 }
 

@@ -72,6 +72,15 @@ void DrawGrabCutLines(
     cv::Mat& image,
     const cv::Rect& face_area);
 
+/* 如果image不包含area，则扩展image（创建新的直接修改），
+ * 扩展区域使用border_pixel填充。
+ * 返回area在新图像中的新区域。
+ */
+cv::Rect Extend(
+    cv::Mat& image,
+    const cv::Rect& area,
+    const cv::Scalar& border_pixel);
+
 /* 使用GetFrontBackMask返回的抠像结果，替换image中的背景。
  * raw必须是GetFrontBackMask对image执行的返回结果。
  * 返回一个新的图像，类型是CV_8UC3，大小和image一致。

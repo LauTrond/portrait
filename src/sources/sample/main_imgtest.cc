@@ -35,15 +35,13 @@ int main(int argc, char** argv)
     {
         const std::string filename(argv[index]);
         cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
-
+        cv::Mat image_show = cv::Mat(PortraitHeight, PortraitWidth, CV_8UC3);
+        image_show = cv::Scalar(0,0,0);
         try
         {
             //抠图
             SemiData semi = PortraitProcessSemi(std::move(image), FaceResizeTo);
-            cv::Mat semi_image = semi.GetImageWithLines();
-            cv::putText(semi_image, filename, cv::Point(0,30),
-                        cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,255,0));
-            cv::imshow(WindowName + "_src", semi_image);
+            image_show = semi.GetImageWithLines();
 
             //针对每种背景色混合背景
             for (int i = 0 ; i < NewBackColor.size() ; i++)
@@ -58,8 +56,12 @@ int main(int argc, char** argv)
         }
         catch (std::exception& err)
         {
-            std::cout << "Error: " << err.what() << std::endl;
+            cv::putText(image_show, err.what(), cv::Point(0,60),
+                        cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,0,255));
         }
+        cv::putText(image_show, filename, cv::Point(0,30),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,255,0));
+        cv::imshow(WindowName + "_src", image_show);
 
         while (true)
         {

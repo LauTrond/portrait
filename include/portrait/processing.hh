@@ -12,7 +12,7 @@ cv::Mat PortraitProcessAll(
     const int face_resize_to = 200,
     const cv::Size& portrait_size = cv::Size(300,400),
     const int VerticalOffset = 0,
-    const cv::Vec3b& back_color = {240,240,240});
+    const cv::Vec3b& back_color = cv::Vec3b(240,240,240));
 
 struct SemiData
 {
@@ -38,7 +38,7 @@ SemiData PortraitProcessSemi(
     const int face_resize_to);
 
 cv::Mat PortraitMix(
-    const SemiData& semi,
+    SemiData& semi,
     const cv::Size& portrait_size,
     const int VerticalOffset,
     const cv::Vec3b& back_color);

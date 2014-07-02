@@ -32,7 +32,7 @@ public:
           _pipe_stream(),
           _decode_result(std::async([&]{
               auto os = _pipe_stream.GetOutputStream();
-              Decode(_src_stream, os);
+              Decode(_src_stream, *os);
           }))
     { }
 
@@ -43,8 +43,8 @@ public:
 
     size_t GetSize()
     {
-        common::PipeInputStream pipe_in_stream = _pipe_stream.GetInputStream();
-        StreamSource source(pipe_in_stream, GetDecodeResultSize(_src_stream.Size()));
+        auto pipe_in_stream = _pipe_stream.GetInputStream();
+        StreamSource source(*pipe_in_stream, GetDecodeResultSize(_src_stream.Size()));
 
         uint32_t _dst_size;
         if (!snappy::GetUncompressedLength(&source, &_dst_size))
@@ -56,8 +56,8 @@ public:
 
     void Uncompress(char* out_bytes)
     {
-        common::PipeInputStream pipe_in_stream = _pipe_stream.GetInputStream();
-        StreamSource source(pipe_in_stream, GetDecodeResultSize(_src_stream.Size()));
+        auto pipe_in_stream = _pipe_stream.GetInputStream();
+        StreamSource source(*pipe_in_stream, GetDecodeResultSize(_src_stream.Size()));
 
         if (!snappy::RawUncompress(&source, out_bytes))
             throw std::runtime_error(

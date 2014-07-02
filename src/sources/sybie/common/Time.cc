@@ -59,12 +59,12 @@ DateTime DateTime::Now()
 
 DateTime DateTime::MinValue()
 {
-    return DateTime(INT64_MIN);
+    return DateTime(0);
 }
 
 DateTime DateTime::MaxValue()
 {
-    return DateTime(INT64_MAX);
+    return DateTime(0x7FFFFFFFFFFFFFFF);
 }
 
 DateTime DateTime::FromCTime(time_t t)

@@ -52,25 +52,8 @@ ByteArrayBuffer::ByteArrayBuffer(std::string& str)
     _InitByteArrayBuffer(*this, &str[0], str.size());
 }
 
-ByteArrayBuffer::ByteArrayBuffer(ByteArrayBuffer&& another)
-    : std::streambuf()
-{
-    Swap(another);
-}
-
 ByteArrayBuffer::~ByteArrayBuffer()
 { }
-
-ByteArrayBuffer& ByteArrayBuffer::operator=(ByteArrayBuffer&& another) throw()
-{
-    Swap(another);
-    return *this;
-}
-
-void ByteArrayBuffer::Swap(ByteArrayBuffer& another) throw()
-{
-    std::streambuf::swap(another);
-}
 
 char* ByteArrayBuffer::Data()
 {
@@ -150,27 +133,9 @@ ByteArrayStream::ByteArrayStream(std::string& str)
     : std::iostream(new ByteArrayBuffer(str))
 { }
 
-ByteArrayStream::ByteArrayStream(ByteArrayStream&& another)
-    : std::iostream(nullptr)
-{
-    Swap(another);
-}
-
 ByteArrayStream::~ByteArrayStream()
 {
     delete rdbuf();
-}
-
-ByteArrayStream& ByteArrayStream::operator=(ByteArrayStream&& another) throw()
-{
-    Swap(another);
-    return *this;
-}
-
-void ByteArrayStream::Swap(ByteArrayStream& another) throw()
-{
-    std::iostream::swap(another);
-    SwapBuf(*this, another);
 }
 
 char* ByteArrayStream::Data()
@@ -185,6 +150,26 @@ size_t ByteArrayStream::Size() const
 
 class PipeBufferImpl : Uncopyable
 {
+public:
+    struct AtomicBool : Uncopyable
+    {
+    public:
+        AtomicBool(bool val) : _val(val) { }
+        AtomicBool& operator=(bool val)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _val = val;
+            return *this;
+        }
+        operator bool()
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _val;
+        }
+    private:
+        bool _val;
+        std::mutex _mutex;
+    }; //struct AtomicBool
 public:
     struct BufferItem : Uncopyable
     {
@@ -281,7 +266,7 @@ public:
 private:
     size_t _buf_size;
     size_t _queue_size;
-    std::atomic<bool> _get_eof, _put_eof;
+    AtomicBool _get_eof, _put_eof;
 
     std::unique_ptr<BufferItem> _gbuf, _pbuf;
     std::queue<std::unique_ptr<BufferItem>> _buf_queue;
@@ -377,27 +362,9 @@ PipeBuffer::PipeBuffer(size_t buf_size, size_t buf_count)
     : std::streambuf(), _impl(new PipeBufferImpl(buf_size, buf_count))
 { }
 
-PipeBuffer::PipeBuffer(PipeBuffer&& another) throw()
-    : std::streambuf(), _impl(nullptr)
-{
-    Swap(another);
-}
-
 PipeBuffer::~PipeBuffer()
 {
     delete (PipeBufferImpl*)_impl;
-}
-
-PipeBuffer& PipeBuffer::operator=(PipeBuffer&& another) throw()
-{
-    swap(another);
-    return *this;
-}
-
-void PipeBuffer::Swap(PipeBuffer& another) throw()
-{
-    std::streambuf::swap(another);
-    std::swap(_impl, another._impl);
 }
 
 void PipeBuffer::PutEof()
@@ -490,28 +457,10 @@ PipeInputStream::PipeInputStream(PipeBuffer* buffer)
     : std::istream(buffer)
 { }
 
-PipeInputStream::PipeInputStream(PipeInputStream&& another) throw()
-    : std::istream(nullptr)
-{
-    Swap(another);
-}
-
 PipeInputStream::~PipeInputStream()
 {
     if (rdbuf())
         GetEof();
-}
-
-PipeInputStream& PipeInputStream::operator=(PipeInputStream&& another) throw()
-{
-    Swap(another);
-    return *this;
-}
-
-void PipeInputStream::Swap(PipeInputStream& another) throw()
-{
-    std::istream::swap(another);
-    SwapBuf(*this, another);
 }
 
 bool PipeInputStream::Skip(size_t bytes)
@@ -531,28 +480,10 @@ PipeOutputStream::PipeOutputStream(PipeBuffer* buffer)
     : std::ostream(buffer)
 { }
 
-PipeOutputStream::PipeOutputStream(PipeOutputStream&& another) throw()
-    : std::ostream(nullptr)
-{
-    Swap(another);
-}
-
 PipeOutputStream::~PipeOutputStream()
 {
     if (rdbuf())
         PutEof();
-}
-
-PipeOutputStream& PipeOutputStream::operator=(PipeOutputStream&& another) throw()
-{
-    Swap(another);
-    return *this;
-}
-
-void PipeOutputStream::Swap(PipeOutputStream& another) throw()
-{
-    std::ostream::swap(another);
-    SwapBuf(*this, another);
 }
 
 void PipeOutputStream::PutEof()
@@ -567,36 +498,21 @@ PipeStream::PipeStream(size_t buf_size, size_t buf_count)
     : _impl(new PipeBuffer(buf_size, buf_count))
 { }
 
-PipeStream::PipeStream(PipeStream&& another) throw()
-    : _impl(nullptr)
-{
-    Swap(another);
-}
-
 PipeStream::~PipeStream()
 {
     delete (PipeBuffer*)_impl;
 }
 
-PipeStream& PipeStream::operator=(PipeStream&& another) throw()
+std::unique_ptr<PipeInputStream> PipeStream::GetInputStream()
 {
-    Swap(another);
-    return *this;
+    return std::unique_ptr<PipeInputStream>(
+        new PipeInputStream((PipeBuffer*)_impl));
 }
 
-void PipeStream::Swap(PipeStream& another) throw()
+std::unique_ptr<PipeOutputStream> PipeStream::GetOutputStream()
 {
-    std::swap(_impl, another._impl);
-}
-
-PipeInputStream PipeStream::GetInputStream()
-{
-    return PipeInputStream((PipeBuffer*)_impl);
-}
-
-PipeOutputStream PipeStream::GetOutputStream()
-{
-    return PipeOutputStream((PipeBuffer*)_impl);
+    return std::unique_ptr<PipeOutputStream>(
+        new PipeOutputStream((PipeBuffer*)_impl));
 }
 
 PipeBuffer& PipeStream::GetBuffer()

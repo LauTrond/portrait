@@ -12,6 +12,7 @@
 #include <istream> //std::istream
 #include <ostream> //std::ostream
 #include <string>
+#include <memory> //std::unique_ptr
 
 namespace sybie {
 namespace common {
@@ -28,12 +29,11 @@ public:
     //把string内部数据当作char数组（警告：在ByteArrayBuffer析构前不可修改str）
     explicit ByteArrayBuffer(std::string& str);
     ByteArrayBuffer(const ByteArrayBuffer& another) = delete;
-    ByteArrayBuffer(ByteArrayBuffer&& another);
-    virtual ~ByteArrayBuffer();
+    ByteArrayBuffer(ByteArrayBuffer&& another) = delete;
+    virtual ~ByteArrayBuffer() throw();
 
     ByteArrayBuffer& operator=(const ByteArrayBuffer& another) = delete;
-    ByteArrayBuffer& operator=(ByteArrayBuffer&& another) throw();
-    void Swap(ByteArrayBuffer& another) throw();
+    ByteArrayBuffer& operator=(ByteArrayBuffer&& another) = delete;
 public:
     char* Data();
     size_t Size() const;
@@ -56,12 +56,11 @@ public:
     //把string内部数据当作char数组（警告：在ByteArrayBuffer析构前不可修改str）
     explicit ByteArrayStream(std::string& str);
     ByteArrayStream(const ByteArrayStream& another) = delete;
-    ByteArrayStream(ByteArrayStream&& another);
-    virtual ~ByteArrayStream();
+    ByteArrayStream(ByteArrayStream&& another)  = delete;
+    virtual ~ByteArrayStream() throw();
 
     ByteArrayStream& operator=(const ByteArrayStream& another) = delete;
-    ByteArrayStream& operator=(ByteArrayStream&& another) throw();
-    void Swap(ByteArrayStream& another) throw();
+    ByteArrayStream& operator=(ByteArrayStream&& another) = delete;
 public:
     char* Data();
     size_t Size() const;
@@ -78,12 +77,11 @@ public: //实例控制
     PipeBuffer(size_t buf_size = DefaultBufferSize,
                size_t buf_count = DefaultBufferCount);
     PipeBuffer(const PipeBuffer& another) = delete;
-    PipeBuffer(PipeBuffer&& another) throw();
-    virtual ~PipeBuffer();
+    PipeBuffer(PipeBuffer&& another) = delete;
+    virtual ~PipeBuffer() throw();
 
     PipeBuffer& operator=(const PipeBuffer& another) = delete;
-    PipeBuffer& operator=(PipeBuffer&& another) throw();
-    void Swap(PipeBuffer& another) throw();
+    PipeBuffer& operator=(PipeBuffer&& another) = delete;
 public: //Pipe特有功能
     void PutEof(); //写端关闭，当缓冲队列清空后，read会返回EOF
     void GetEof(); //读端关闭，当下一次同步缓冲区时，write会返回EOF
@@ -109,12 +107,11 @@ class PipeInputStream : public std::istream
 public:
     explicit PipeInputStream(PipeBuffer* buffer);
     PipeInputStream(const PipeInputStream& another) = delete;
-    PipeInputStream(PipeInputStream&& another) throw();
-    virtual ~PipeInputStream();
+    PipeInputStream(PipeInputStream&& another) = delete;
+    virtual ~PipeInputStream() throw();
 
     PipeInputStream& operator=(const PipeInputStream& another) = delete;
-    PipeInputStream& operator=(PipeInputStream&& another) throw();
-    void Swap(PipeInputStream& another) throw();
+    PipeInputStream& operator=(PipeInputStream&& another) = delete;
 public:
     bool Skip(size_t bytes); //跳过n个字节，如果遇到EOF则返回false。
     void GetEof(); //读端关闭，当下一次同步缓冲区时，write会返回EOF
@@ -126,12 +123,11 @@ class PipeOutputStream : public std::ostream
 public:
     explicit PipeOutputStream(PipeBuffer* buffer);
     PipeOutputStream(const PipeOutputStream& another) = delete;
-    PipeOutputStream(PipeOutputStream&& another) throw();
-    virtual ~PipeOutputStream();
+    PipeOutputStream(PipeOutputStream&& another) = delete;
+    virtual ~PipeOutputStream() throw();
 
     PipeOutputStream& operator=(const PipeOutputStream& another) = delete;
-    PipeOutputStream& operator=(PipeOutputStream&& another) throw();
-    void Swap(PipeOutputStream& another) throw();
+    PipeOutputStream& operator=(PipeOutputStream&& another) = delete;
 public:
     void PutEof(); //写端关闭，当缓冲队列清空后，read会返回EOF
 }; //class PipeOutputStream
@@ -145,17 +141,16 @@ public:
     explicit PipeStream(size_t buf_size = PipeBuffer::DefaultBufferSize,
                         size_t buf_count = PipeBuffer::DefaultBufferCount);
     PipeStream(const PipeStream& another) = delete;
-    PipeStream(PipeStream&& another) throw();
-    ~PipeStream();
+    PipeStream(PipeStream&& another) = delete;
+    ~PipeStream() throw();
 
     PipeStream& operator=(const PipeStream& another) = delete;
-    PipeStream& operator=(PipeStream&& another) throw();
-    void Swap(PipeStream& another) throw();
+    PipeStream& operator=(PipeStream&& another) = delete;
 public:
     //获取读端。注意，在PipeInputStream析构前要保留PipeStream。
-    PipeInputStream GetInputStream(); //return PipeInputStream(&GetBuffer());
+    std::unique_ptr<PipeInputStream> GetInputStream(); //return PipeInputStream(&GetBuffer());
     //获取写端。注意，在PipeOutputStream析构前要保留PipeStream。
-    PipeOutputStream GetOutputStream(); //return PipeOutputStream(&GetBuffer());
+    std::unique_ptr<PipeOutputStream> GetOutputStream(); //return PipeOutputStream(&GetBuffer());
     //直接访问内部的PipeBuffer（警告：除非明确知道这是什么，否则不要使用）
     PipeBuffer& GetBuffer();
 private:

@@ -162,11 +162,11 @@ public:
 
     explicit ShellArgumentsWithHelp(const Memos& memos = Memos());
     ShellArgumentsWithHelp(const ShellArgumentsWithHelp& another);
-    ShellArgumentsWithHelp(ShellArgumentsWithHelp&& another);
-    ~ShellArgumentsWithHelp();
+    ShellArgumentsWithHelp(ShellArgumentsWithHelp&& another) throw();
+    ~ShellArgumentsWithHelp() throw();
 
     ShellArgumentsWithHelp& operator=(const ShellArgumentsWithHelp& another);
-    ShellArgumentsWithHelp& operator=(ShellArgumentsWithHelp&& another);
+    ShellArgumentsWithHelp& operator=(ShellArgumentsWithHelp&& another) throw();
     void Swap(ShellArgumentsWithHelp& another) throw();
 
 public:

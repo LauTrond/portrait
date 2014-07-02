@@ -323,12 +323,12 @@ ShellArgumentsWithHelp::ShellArgumentsWithHelp(const ShellArgumentsWithHelp& ano
       _memos(another._memos)
 { }
 
-ShellArgumentsWithHelp::ShellArgumentsWithHelp(ShellArgumentsWithHelp&& another)
+ShellArgumentsWithHelp::ShellArgumentsWithHelp(ShellArgumentsWithHelp&& another) throw()
     : ShellArguments(std::move(another)),
       _memos(std::move(another._memos))
 { }
 
-ShellArgumentsWithHelp::~ShellArgumentsWithHelp()
+ShellArgumentsWithHelp::~ShellArgumentsWithHelp() throw()
 { }
 
 ShellArgumentsWithHelp& ShellArgumentsWithHelp::operator=(const ShellArgumentsWithHelp& another)
@@ -338,7 +338,7 @@ ShellArgumentsWithHelp& ShellArgumentsWithHelp::operator=(const ShellArgumentsWi
     return *this;
 }
 
-ShellArgumentsWithHelp& ShellArgumentsWithHelp::operator=(ShellArgumentsWithHelp&& another)
+ShellArgumentsWithHelp& ShellArgumentsWithHelp::operator=(ShellArgumentsWithHelp&& another) throw()
 {
     ShellArguments::operator=(std::move(another));
     _memos = std::move(another._memos);

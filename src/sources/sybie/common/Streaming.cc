@@ -18,13 +18,6 @@ namespace common {
 
 //non-class functions
 
-static void SwapBuf(std::ios& a, std::ios& b)
-{
-    std::streambuf* tmp(a.rdbuf());
-    a.rdbuf(b.rdbuf());
-    b.rdbuf(tmp);
-}
-
 int64_t GetStreamSize(std::istream& is)
 {
     std::streampos cur = is.tellg();
@@ -52,7 +45,7 @@ ByteArrayBuffer::ByteArrayBuffer(std::string& str)
     _InitByteArrayBuffer(*this, &str[0], str.size());
 }
 
-ByteArrayBuffer::~ByteArrayBuffer()
+ByteArrayBuffer::~ByteArrayBuffer() throw()
 { }
 
 char* ByteArrayBuffer::Data()
@@ -133,7 +126,7 @@ ByteArrayStream::ByteArrayStream(std::string& str)
     : std::iostream(new ByteArrayBuffer(str))
 { }
 
-ByteArrayStream::~ByteArrayStream()
+ByteArrayStream::~ByteArrayStream() throw()
 {
     delete rdbuf();
 }
@@ -182,7 +175,7 @@ public:
             : _size(size), _data(new char[size])
         { }
 
-        ~BufferItem()
+        ~BufferItem() throw()
         {
             delete[] _data;
         }
@@ -213,7 +206,7 @@ public:
           _mutex(), _put_event(), _get_event()
     { }
 
-    ~PipeBufferImpl()
+    ~PipeBufferImpl() throw()
     { }
 
     BufferItem& PutSync(char* pptr)
@@ -362,7 +355,7 @@ PipeBuffer::PipeBuffer(size_t buf_size, size_t buf_count)
     : std::streambuf(), _impl(new PipeBufferImpl(buf_size, buf_count))
 { }
 
-PipeBuffer::~PipeBuffer()
+PipeBuffer::~PipeBuffer() throw()
 {
     delete (PipeBufferImpl*)_impl;
 }
@@ -457,7 +450,7 @@ PipeInputStream::PipeInputStream(PipeBuffer* buffer)
     : std::istream(buffer)
 { }
 
-PipeInputStream::~PipeInputStream()
+PipeInputStream::~PipeInputStream() throw()
 {
     if (rdbuf())
         GetEof();
@@ -480,7 +473,7 @@ PipeOutputStream::PipeOutputStream(PipeBuffer* buffer)
     : std::ostream(buffer)
 { }
 
-PipeOutputStream::~PipeOutputStream()
+PipeOutputStream::~PipeOutputStream() throw()
 {
     if (rdbuf())
         PutEof();
@@ -498,7 +491,7 @@ PipeStream::PipeStream(size_t buf_size, size_t buf_count)
     : _impl(new PipeBuffer(buf_size, buf_count))
 { }
 
-PipeStream::~PipeStream()
+PipeStream::~PipeStream() throw()
 {
     delete (PipeBuffer*)_impl;
 }

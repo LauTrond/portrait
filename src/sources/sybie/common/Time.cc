@@ -2,6 +2,7 @@
 
 #include "sybie/common/Time.hh"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>

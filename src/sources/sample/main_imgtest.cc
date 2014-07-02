@@ -10,7 +10,7 @@ using namespace portrait;
 
 const std::string WindowName = "Potrait";
 enum { FaceResizeTo = 200 };
-enum { PortraitWidth = 250, PortraitHeight = 350 };
+enum { PortraitWidth = 300, PortraitHeight = 400 };
 
 const std::vector<cv::Vec3b> NewBackColor({
 {243, 191, 0},

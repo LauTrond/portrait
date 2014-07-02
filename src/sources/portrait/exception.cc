@@ -13,7 +13,7 @@ static std::string GetErrorDescription(ErrorType _type)
     return "Unknown";
 }
 
-Error::Error(ErrorType type)
+Error::Error(ErrorType type) throw()
     : std::logic_error(GetErrorDescription(type)), _type(type)
 { }
 

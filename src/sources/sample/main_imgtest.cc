@@ -1,6 +1,5 @@
 #include <iostream>
 #include <exception>
-#include <vector>
 
 #include "opencv2/opencv.hpp"
 
@@ -19,47 +18,9 @@ const std::vector<cv::Vec3b> NewBackColor({
 {240, 240, 240}
 });
 
-enum DrawingState {None, DrawFront, DrawBack};
-
-struct SharedData
-{
-    SemiData semi;
-    std::vector<cv::Point> front;
-    std::vector<cv::Point> back;
-    DrawingState drawing;
-    const cv::Mat image_origin;
-    cv::Mat image_drawed;
-};
-
-void onMouse( int event, int x, int y, int flags, void* userdata)
-{
-    SharedData& data = *(SharedData*)userdata;
-
-    switch (event)
-    {
-    default: break;
-    case cv::EVENT_RBUTTONDOWN:
-        data.front.clear();
-        data.back.clear();
-        break;
-    case cv::EVENT_LBUTTONDOWN:
-        if (flags == cv::EVENT_FLAG_CTRLKEY) data.drawing = DrawFront;
-        if (flags == cv::EVENT_FLAG_ALTKEY) data.drawing = DrawBack;
-        break;
-    case cv::EVENT_LBUTTONUP:
-        data.drawing = None;
-        break;
-    case cv::EVENT_MOUSEMOVE:
-        if (data.drawing == DrawFront) data.front.push_back();
-    }
-
-}
-
 int main(int argc, char** argv)
 {
     cv::namedWindow(WindowName + "_src", CV_WINDOW_AUTOSIZE);
-    SharedData shared_data;
-    cv::setMouseCallback(WindowName + "_src", onMouse, (MouseEventData*)&shared_data);
     for (int i = 0 ; i < NewBackColor.size() ; i++)
         cv::namedWindow(WindowName + std::to_string(i), CV_WINDOW_AUTOSIZE);
 
@@ -79,15 +40,15 @@ int main(int argc, char** argv)
         try
         {
             //抠图
-            data.semi = PortraitProcessSemi(std::move(image), FaceResizeTo);
-            image_show = data.semi.GetImageWithLines();
+            SemiData semi = PortraitProcessSemi(std::move(image), FaceResizeTo);
+            image_show = semi.GetImageWithLines();
 
             //针对每种背景色混合背景
             for (int i = 0 ; i < NewBackColor.size() ; i++)
             {
                 //混合
                 cv::Mat img_mix = PortraitMix(
-                    data.semi, cv::Size(PortraitWidth, PortraitHeight),
+                    semi, cv::Size(PortraitWidth, PortraitHeight),
                     0, NewBackColor[i]);
                 //显示结果
                 cv::imshow(WindowName + std::to_string(i), img_mix);
@@ -97,7 +58,6 @@ int main(int argc, char** argv)
         {
             cv::putText(image_show, err.what(), cv::Point(0,60),
                         cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,0,255));
-            data.semi = SemiData();
         }
         cv::putText(image_show, filename, cv::Point(0,30),
                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,255,0));

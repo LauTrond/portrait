@@ -8,7 +8,7 @@
 
 using namespace portrait;
 
-const std::string WindowName = "Potrait";
+const std::string WindowName = "Portrait";
 enum { FrameWidth = 1280, FrameHeight = 720 };
 enum { FaceResizeTo = 200 };
 enum { PortraitWidth = 300, PortraitHeight = 400 };

@@ -25,7 +25,7 @@ const double
 
 //背景
 const double
-    BGWidth = 0.20,
+    BGWidth = 0.30,
     BGTop = 0.50,
     BGBottom = 0.00;
 //绝对前景－脸

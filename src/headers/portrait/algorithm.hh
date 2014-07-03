@@ -72,7 +72,8 @@ void DrawGrabCutLines(
     cv::Mat& image,
     const cv::Rect& face_area);
 
-/* 如果image不包含area，则扩展image（创建新的直接修改），
+/* 如果area超出image范围，则扩展image以包含area
+ * 创建新的内存空间，并直接修改image。
  * 扩展区域使用border_pixel填充。
  * 返回area在新图像中的新区域。
  */

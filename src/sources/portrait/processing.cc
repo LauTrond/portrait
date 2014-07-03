@@ -26,13 +26,26 @@ public:
     cv::Mat image; //CV_8UC3 R,G,B
     cv::Mat raw; //CV_8UC4 R,G,B,A
     cv::Rect face_area;
+public:
+    static SemiData NewWrapper()
+    {
+        return SemiData(new SemiDataImpl());
+    }
+    static SemiDataImpl& GetFrom(SemiData& wrapper)
+    {
+        return *wrapper._data;
+    }
+    static const SemiDataImpl& GetFrom(const SemiData& wrapper)
+    {
+        return *wrapper._data;
+    }
 }; //struct SemiDataImpl
 
 SemiData::SemiData() throw()
     : _data(nullptr)
 { }
 
-SemiData::SemiData(void* data) throw()
+SemiData::SemiData(SemiDataImpl* data) throw()
     : _data(data)
 { }
 
@@ -44,7 +57,7 @@ SemiData::SemiData(SemiData&& another) throw()
 
 SemiData::~SemiData() throw()
 {
-    delete (SemiDataImpl*)_data;
+    delete _data;
 }
 
 SemiData& SemiData::operator=(SemiData&& another) throw()
@@ -58,20 +71,16 @@ void SemiData::Swap(SemiData& another) throw()
     std::swap(_data, another._data);
 }
 
-void* SemiData::Get() const throw()
-{
-    return _data;
-}
-
 cv::Mat SemiData::GetImage() const
 {
-    return ((SemiDataImpl*)_data)->image;
+    cv::Mat tmp;
+    _data->image.copyTo(tmp);
+    return tmp;
 }
 cv::Mat SemiData::GetImageWithLines() const
 {
-    cv::Mat tmp;
-    ((SemiDataImpl*)_data)->image.copyTo(tmp);
-    DrawGrabCutLines(tmp, ((SemiDataImpl*)_data)->face_area);
+    cv::Mat tmp = GetImage();
+    DrawGrabCutLines(tmp, _data->face_area);
     return tmp;
 }
 
@@ -79,8 +88,8 @@ SemiData PortraitProcessSemi(
     cv::Mat&& photo,
     const int face_resize_to)
 {
-    SemiData semi(new SemiDataImpl());
-    SemiDataImpl& data = *(SemiDataImpl*)semi.Get();
+    SemiData semi = SemiDataImpl::NewWrapper();
+    SemiDataImpl& data = SemiDataImpl::GetFrom(semi);
     data.image = photo;
     photo = cv::Mat();
 
@@ -97,18 +106,18 @@ SemiData PortraitProcessSemi(
 
 cv::Mat PortraitMix(
     SemiData& semi,
-    const cv::Size& portrait_size,
+    const cv::Size& crop_size,
     const int VerticalOffset,
     const cv::Vec3b& back_color)
 {
-    SemiDataImpl& data = *(SemiDataImpl*)semi.Get();
+    SemiDataImpl& data = SemiDataImpl::GetFrom(semi);
     //裁剪
     cv::Point face_center = CenterOf(data.face_area);
-    cv::Rect crop_area(face_center.x - portrait_size.width / 2,
-                       face_center.y - portrait_size.height / 2
+    cv::Rect crop_area(face_center.x - crop_size.width / 2,
+                       face_center.y - crop_size.height / 2
                            + VerticalOffset,
-                       portrait_size.width,
-                       portrait_size.height);
+                       crop_size.width,
+                       crop_size.height);
     if (!Inside(crop_area, data.image))
     {
         cv::Rect new_crop_area_1 = Extend(data.image, crop_area, cv::Scalar(0,0,0));

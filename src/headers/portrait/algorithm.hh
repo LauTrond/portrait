@@ -28,8 +28,12 @@ bool Inside(const cv::Rect& rect_inner, const cv::Rect& rect_outter);
 bool Inside(const cv::Rect& rect_inner, const cv::Mat& image);
 // 获取rect1和rect2重叠部分
 cv::Rect OverlapArea(const cv::Rect& rect1, const cv::Rect& rect2);
-// 计算Rect(rect1.point - offset, rect1.size)
+// 计算rect1相对offset的坐标。
+// 返回结果的width和height与rect1相同，x和y分别减去offset的x和y。
 cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset);
+// 计算Rect(rect1.point - rect2.point, rect1.size)
+// 返回结果的width和height与rect1相同，x和y分别减去rect2的x和y。
+cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2);
 
 int ModulusOf(const cv::Vec3i& vec);
 
@@ -56,15 +60,17 @@ cv::Rect ResizeFace(
     const cv::Rect& face_area,
     const cv::Size& face_resize_to);
 
-/* 根据图像（image）和其中的人脸位置抠出人像，
- * 返回一个于image同尺寸的矩阵，类型时CV_8UC4，
+/* 根据图像（image）和其中的人脸位置（face_area）抠出人像，
+ * 返回一个与image同尺寸的矩阵，类型时CV_8UC4，
  * 前三通道的格式与image相同，表示image中每个像素的背景色（可能是近似）
  * 第四通道为Alpha，表示前景的混合比例。
  * 对于Alpha为255的点（全前景），前3通道无意义。
  */
 cv::Mat GetFrontBackMask(
     const cv::Mat& image,
-    const cv::Rect& face_area);
+    const cv::Rect& face_area,
+    const std::vector<cv::Point>& front,
+    const std::vector<cv::Point>& back);
 
 /* 画出一些用于调试的辅助线，展示绝对前景、绝对背景等区域。
  */
@@ -83,13 +89,17 @@ cv::Rect Extend(
     const cv::Scalar& border_pixel);
 
 /* 使用GetFrontBackMask返回的抠像结果，替换image中的背景。
- * raw必须是GetFrontBackMask对image执行的返回结果。
+ * raw：必须是GetFrontBackMask对image执行的返回结果。
+ * back_color：背景色
+ * mix_alpha：混合比例，1表示完全替换背景，0表示完全不替换，
+ *           1和0之间表示按一定的比例替换
  * 返回一个新的图像，类型是CV_8UC3，大小和image一致。
  */
 cv::Mat Mix(
     const cv::Mat& image,
     const cv::Mat& raw,
-    const cv::Vec3b& back_color);
+    const cv::Vec3b& back_color,
+    const double mix_alpha);
 
 }  //namespace portrait
 

@@ -134,6 +134,11 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset)
     return cv::Rect(TopLeft(rect1) - offset, rect1.size());
 }
 
+cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2)
+{
+    return SubArea(rect1, TopLeft(rect2));
+}
+
 int ModulusOf(const cv::Vec3i& vec)
 {
     return (int)sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
@@ -196,7 +201,7 @@ static void DrawMask(
     const cv::Scalar& back_color,
     int thickness )
 {
-    //几条分割线
+    //分割线
     int bg_up = face_area.y - face_area.height * BGTop;
     int bg_down = face_area.y + face_area.height * (1 + BGBottom);
     int bg_left = face_area.x - face_area.width * BGWidth;
@@ -257,7 +262,9 @@ static void DrawMask(
 
 cv::Mat GetFrontBackMask(
     const cv::Mat& image,
-    const cv::Rect& face_area)
+    const cv::Rect& face_area,
+    const std::vector<cv::Point>& front,
+    const std::vector<cv::Point>& back)
 {
     sybie::common::StatingTestTimer timer("GetFrontBackMask");
     sybie_assert(Inside(face_area, image))
@@ -269,7 +276,14 @@ cv::Mat GetFrontBackMask(
     cv::Mat mask(image.rows, image.cols, CV_8UC1);
     DrawMask(mask, face_area, true, cv::GC_PR_FGD,
              cv::GC_FGD, cv::GC_PR_BGD, cv::GC_BGD, CV_FILLED);
-    //抠图
+
+    //自定义的关键点
+    for (auto& point : front)
+        mask.at<uint8_t>(point) = cv::GC_FGD;
+    for (auto& point : back)
+        mask.at<uint8_t>(point) = cv::GC_BGD;
+
+    //使用cv::grabCut分离前景和背景
     {
         sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut");
 
@@ -425,20 +439,22 @@ cv::Rect Extend(
 cv::Mat Mix(
     const cv::Mat& image,
     const cv::Mat& raw,
-    const cv::Vec3b& back_color)
+    const cv::Vec3b& back_color,
+    const double mix_alpha)
 {
+    assert(mix_alpha >= 0 && mix_alpha <= 1);
     cv::Mat image_mix(image.rows, image.cols, CV_8UC3);
     for (int r = 0 ; r < image.rows ; r++)
         for (int c = 0 ; c < image.cols ; c++)
         {
             const cv::Vec4b& p = raw.at<cv::Vec4b>(r,c);
-            const uint8_t& alpha = p[3];
+            const uint8_t& pixiel_alpha = p[3];
             const cv::Vec3b& backc = *(const cv::Vec3b*)(const void*)&p;
 
             const cv::Vec3b& src = image.at<cv::Vec3b>(r,c);
             cv::Vec3b& mix = image_mix.at<cv::Vec3b>(r,c);
             mix = (cv::Vec3i)src + (cv::Vec3i)((cv::Vec3i)back_color - (cv::Vec3i)backc)
-                        * (1 - (double)alpha / 255);
+                        * (1 - (double)pixiel_alpha / 255) * mix_alpha;
         }
     return image_mix;
 }

@@ -23,11 +23,16 @@ const double
 
 //以下多个常数定义前景、背景划分的关键数值，全是检测出人脸矩形的长宽比例。
 
-//背景
+//绝对背景
 const double
-    BGWidth = 0.30,
+    BGWidth = 0.25,
     BGTop = 0.50,
     BGBottom = 0.00;
+//可能背景
+const double
+    PR_BGWidth = 0.10,
+    PR_BGTop = 0.30,
+    PR_BGBottom = 0.10;
 //绝对前景－脸
 const double
     FGFaceTop = 0.05,
@@ -36,6 +41,7 @@ const double
 //绝对前景-颈
 const double
     FGNeckSide = -0.35;
+//绝对前景-身体
 const double
     FGBodyTop = 0.30,
     FGBodySide = 0.00;
@@ -186,6 +192,7 @@ static void DrawMask(
     bool clear,
     const cv::Scalar& clear_with_color,
     const cv::Scalar& front_color,
+    const cv::Scalar& pr_back_color,
     const cv::Scalar& back_color,
     int thickness )
 {
@@ -194,6 +201,10 @@ static void DrawMask(
     int bg_down = face_area.y + face_area.height * (1 + BGBottom);
     int bg_left = face_area.x - face_area.width * BGWidth;
     int bg_right = face_area.x + face_area.width * (1 + BGWidth);
+    int pr_bg_up = face_area.y - face_area.height * PR_BGTop;
+    int pr_bg_down = face_area.y + face_area.height * (1 + PR_BGBottom);
+    int pr_bg_left = face_area.x - face_area.width * PR_BGWidth;
+    int pr_bg_right = face_area.x + face_area.width * (1 + PR_BGWidth);
     int fgface_up = face_area.y - face_area.height * FGFaceTop;
     int fgface_down = face_area.y + face_area.height * (1 + FGFaceBottom);
     int fgface_left = face_area.x - face_area.width * FGFaceSide;
@@ -206,6 +217,18 @@ static void DrawMask(
 
     if (clear)
         cv::rectangle(image, WholeArea(image), clear_with_color, CV_FILLED);
+    cv::rectangle(image,
+                  TopLeft(image),
+                  cv::Point(pr_bg_left - 1, pr_bg_down - 1),
+                  pr_back_color, thickness);
+    cv::rectangle(image,
+                  TopRight(image),
+                  cv::Point(pr_bg_right - 1, pr_bg_down - 1),
+                  pr_back_color, thickness);
+    cv::rectangle(image,
+                  cv::Point(pr_bg_left, 0),
+                  cv::Point(pr_bg_right - 1, pr_bg_up - 1),
+                  pr_back_color, thickness);
     cv::rectangle(image,
                   TopLeft(image),
                   cv::Point(bg_left - 1, bg_down - 1),
@@ -245,7 +268,7 @@ cv::Mat GetFrontBackMask(
     //初始化前景/背景掩码
     cv::Mat mask(image.rows, image.cols, CV_8UC1);
     DrawMask(mask, face_area, true, cv::GC_PR_FGD,
-             cv::GC_FGD, cv::GC_BGD, CV_FILLED);
+             cv::GC_FGD, cv::GC_PR_BGD, cv::GC_BGD, CV_FILLED);
     //抠图
     {
         sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut");
@@ -378,7 +401,7 @@ void DrawGrabCutLines(
 {
     DrawMask(image, face_area,
              false, cv::Scalar(0,0,0),
-             cv::Scalar(255,0,0), cv::Scalar(0,0,255),
+             cv::Scalar(255,0,0), cv::Scalar(0,255,0), cv::Scalar(0,0,255),
              1);
 }
 
@@ -419,6 +442,5 @@ cv::Mat Mix(
         }
     return image_mix;
 }
-
 
 }  //namespace portrait

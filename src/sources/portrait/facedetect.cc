@@ -54,4 +54,4 @@ cv::Rect DetectSingleFace(const cv::Mat& image)
     return faces[0];
 }
 
-}
+}  //namespace portrait

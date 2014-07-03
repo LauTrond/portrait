@@ -64,6 +64,6 @@ cv::Mat PortraitMix(
     const int VerticalOffset,
     const cv::Vec3b& back_color);
 
-}
+}  //namespace portrait
 
 #endif

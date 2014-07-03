@@ -129,10 +129,7 @@ cv::Mat PortraitMix(
     }
 
     //替换背景
-    cv::Mat mix = Mix(data.image(crop_area), data.raw(crop_area), back_color);
-
-    return mix;
+    return Mix(data.image(crop_area), data.raw(crop_area), back_color);
 }
 
-
-}
+}  //namespace Portrait

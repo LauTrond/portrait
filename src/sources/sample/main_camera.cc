@@ -20,47 +20,8 @@ const std::vector<cv::Vec3b> NewBackColor({
 {240, 240, 240}
 });
 
-enum DrawingState {None, DrawFront, DrawBack};
-
-struct SharedData
-{
-    SemiData semi;
-    std::vector<cv::Point> front;
-    std::vector<cv::Point> back;
-    DrawingState drawing;
-    const cv::Mat image_origin;
-    cv::Mat image_drawed;
-};
-
-void onMouse( int event, int x, int y, int flags, void* userdata)
-{
-    SharedData& data = *(SharedData*)userdata;
-
-    switch (event)
-    {
-    default: break;
-    case cv::EVENT_RBUTTONDOWN:
-        data.front.clear();
-        data.back.clear();
-        break;
-    case cv::EVENT_LBUTTONDOWN:
-        if (flags == cv::EVENT_FLAG_CTRLKEY) data.drawing = DrawFront;
-        if (flags == cv::EVENT_FLAG_ALTKEY) data.drawing = DrawBack;
-        break;
-    case cv::EVENT_LBUTTONUP:
-        data.drawing = None;
-        break;
-    case cv::EVENT_MOUSEMOVE:
-        if (data.drawing == DrawFront) data.front.push_back();
-        break;
-    }
-
-}
-
 int main(int argc, char** argv)
 {
-    SharedData shared_data;
-    cv::setMouseCallback(WindowName + "_src", onMouse, (MouseEventData*)&shared_data);
     cv::namedWindow(WindowName, CV_WINDOW_AUTOSIZE);
     cv::namedWindow(WindowName + "_src", CV_WINDOW_AUTOSIZE);
     for (int i = 0 ; i < NewBackColor.size() ; i++)

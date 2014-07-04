@@ -61,6 +61,8 @@ cv::Rect ResizeFace(
     const cv::Size& face_resize_to);
 
 /* 根据图像（image）和其中的人脸位置（face_area）抠出人像，
+ *
+ *
  * 返回一个与image同尺寸的矩阵，类型时CV_8UC4，
  * 前三通道的格式与image相同，表示image中每个像素的背景色（可能是近似）
  * 第四通道为Alpha，表示前景的混合比例。
@@ -69,8 +71,7 @@ cv::Rect ResizeFace(
 cv::Mat GetFrontBackMask(
     const cv::Mat& image,
     const cv::Rect& face_area,
-    const std::vector<cv::Point>& front,
-    const std::vector<cv::Point>& back);
+    const cv::Mat& stroke);
 
 /* 画出一些用于调试的辅助线，展示绝对前景、绝对背景等区域。
  */

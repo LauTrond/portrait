@@ -89,9 +89,9 @@ cv::Mat SemiData::GetImage() const
 
 cv::Mat SemiData::GetAlpha() const
 {
-    cv::Mat tmp;
+    cv::Mat tmp(_data->raw.rows, _data->raw.cols, CV_8UC1);
     int from_to[] = {3, 0};
-    cv::mixChannels(&_data->image, 1, &tmp, 1, from_to, 1);
+    cv::mixChannels(&_data->raw, 1, &tmp, 1, from_to, 1);
     return tmp;
 }
 
@@ -118,19 +118,15 @@ SemiData PortraitProcessSemi(
         0.6, 0.6, 0.4); //经验参数：裁剪出超过所有已知证件照规格的尺寸
     data.face_area = ResizeFace(data.image, data.face_area,
                                 cv::Size(face_resize_to, face_resize_to));
-    data.raw = GetFrontBackMask(data.image, data.face_area,
-                                std::vector<cv::Point>(),
-                                std::vector<cv::Point>());
+    data.raw = GetFrontBackMask(data.image, data.face_area, cv::Mat());
 
     return semi;
 }
 
-void SetStroke(SemiData& semi,
-               const std::vector<cv::Point>& front,
-               const std::vector<cv::Point>& back)
+void SetStroke(SemiData& semi, const cv::Mat& stroke)
 {
     SemiDataImpl& data = SemiDataImpl::GetFrom(semi);
-    data.raw = GetFrontBackMask(data.image, data.face_area, front, back);
+    data.raw = GetFrontBackMask(data.image, data.face_area, stroke);
 }
 
     static cv::Rect GetCropArea(const cv::Rect face_area,
@@ -154,10 +150,9 @@ bool CanCropIntegrallty(
         data.face_area, crop_size, vertical_offset);
     return crop_area.x >= 0
         && crop_area.x + crop_area.width <= data.image.cols
-        && crop_area.y >= data.face_area.y
-                        - data.face_area.height
-                          * 0.3 //经验参数：人脸以上空间至少为脸大小的30%
-        && crop_area.y + crop_area.height <= data.image.rows;
+        && crop_area.y + crop_area.height <= data.image.rows
+        && data.face_area.y >= data.face_area.height
+                               * 0.3; //经验参数：人脸上方至少预留空间为脸高度的30%
 }
 
 cv::Mat PortraitMix(

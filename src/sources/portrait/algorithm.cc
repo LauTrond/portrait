@@ -263,8 +263,7 @@ static void DrawMask(
 cv::Mat GetFrontBackMask(
     const cv::Mat& image,
     const cv::Rect& face_area,
-    const std::vector<cv::Point>& front,
-    const std::vector<cv::Point>& back)
+    const cv::Mat& stroke)
 {
     sybie::common::StatingTestTimer timer("GetFrontBackMask");
     sybie_assert(Inside(face_area, image))
@@ -278,10 +277,17 @@ cv::Mat GetFrontBackMask(
              cv::GC_FGD, cv::GC_PR_BGD, cv::GC_BGD, CV_FILLED);
 
     //自定义的关键点
-    for (auto& point : front)
-        mask.at<uint8_t>(point) = cv::GC_FGD;
-    for (auto& point : back)
-        mask.at<uint8_t>(point) = cv::GC_BGD;
+    if (stroke.data != nullptr)
+    {
+        for (int r = 0 ; r < stroke.rows ; r++)
+            for (int c = 0 ; c < stroke.cols ; c++)
+            {
+                uint8_t stroke_point = stroke.at<uint8_t>(r,c);
+                if ( stroke_point == cv::GC_FGD ||
+                     stroke_point == cv::GC_BGD)
+                    mask.at<uint8_t>(r,c) = stroke_point;
+            }
+    }
 
     //使用cv::grabCut分离前景和背景
     {

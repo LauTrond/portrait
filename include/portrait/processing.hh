@@ -86,18 +86,17 @@ SemiData PortraitProcessSemi(
 
 /* 设置抠图的关键点，并重新抠图。关键点可提高抠图的准确率。
  * semi：抠图结果
- * front、back：指定SemiData::GetImage()中的一些点，
- *             表示这些位置是前景／背景。
+ * stroke：类型为CV_8UC1，尺寸为SemiData::GetSize()
+ *        每个单元，cv::GC_BGD表示背景，cv::GC_FGD表示前景，
+ *        其它表示自动。
+ *        如果是空，清空之前设置的关键点。
  *
  * 这个函数会替换之前已经设置的关键点（如果有）并重新抠图。
- * 让front或者back留空即可清除所有关键点并恢复原抠图效果。
  */
-void SetStroke(SemiData& semi,
-               const std::vector<cv::Point>& front,
-               const std::vector<cv::Point>& back);
+void SetStroke(SemiData& semi, const cv::Mat& stroke);
 
-/* 检查用PortraitMix替换背景时是否安全裁剪。
- * 所谓安全，即PortraitMix裁剪时不会在除头顶之外的方向扩展，而且头顶方向也有足够的空间。
+/* 检查用PortraitMix替换背景时是否完整裁剪。
+ * 所谓完整裁剪，即PortraitMix裁剪时不会在除头顶之外的方向扩展，而且头顶方向也不会剪掉头发。
  * 一般来说，如果返回false，表示拍照时没有给人脸附近留有足够的空间，应重新拍照。
  */
 bool CanCropIntegrallty(
@@ -120,7 +119,7 @@ bool CanCropIntegrallty(
  * 本函数会自动在照片的边缘补充back_color指定的底色。
  * 在产品应用中，最好不依赖自动扩展功能，而是引导用户拍照时预留更多空间，
  * 包括上、下、左、右的空间。
- * 通过CanCropSafety函数可以评估是否有足够的空间。
+ * 通过CanCropIntegrallty函数可以评估是否有足够的空间。
  */
 cv::Mat PortraitMix(
     const SemiData& semi,

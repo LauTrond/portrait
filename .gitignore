@@ -1,4 +1,16 @@
+#mac
+.DS_Store
+
+#makefile
 bin
 obj
+
+#Eclipse project files
 */.*
-.DS_Store
+
+#Visual Studio
+*.sdf
+*.opensdf
+*.suo
+x64
+Win32

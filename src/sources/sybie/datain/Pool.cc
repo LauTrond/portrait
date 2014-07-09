@@ -5,12 +5,11 @@
 
 #include <map>
 #include <string>
-#include <iostream>
 
 namespace sybie {
 namespace datain {
 
-typedef std::map<std::string, const char*> PoolMap;
+typedef std::map<std::string, std::map<int, const char*>> PoolMap;
 
 Pool& Pool::GetGlobalPool()
 {
@@ -27,17 +26,18 @@ Pool::~Pool()
     delete (PoolMap*)_impl;
 }
 
-void Pool::Set(const char* data_id, const char* data)
+void Pool::Set(const char* data_id, const int index, const char* data)
 {
-#ifdef _DEBUG
-    std::cout<<data_id<<" imported."<<std::endl;
-#endif
-    (*(PoolMap*)_impl)[data_id] = data;
+    (*(PoolMap*)_impl)[data_id][index] = data;
 }
 
-const char* Pool::Get(const char* data_id) const
+const char* Pool::Get(const char* data_id, const int index) const
 {
-    return (*(PoolMap*)_impl).at(data_id);
+    auto data_all = ((PoolMap*)_impl)->at(data_id);
+    if (data_all.count(index) > 0)
+        return data_all.at(index);
+    else
+        return nullptr;
 }
 
 } //namespace datain

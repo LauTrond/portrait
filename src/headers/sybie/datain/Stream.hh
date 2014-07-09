@@ -6,15 +6,27 @@
 #include "sybie/datain/Stream_fwd.hh"
 
 #include <cstddef>
-#include <streambuf>
 #include <iostream>
 
 #include "sybie/common/Streaming_fwd.hh"
+#include "sybie/datain/Pool_fwd.hh"
 
 #include "snappy-sinksource.h"
 
 namespace sybie {
 namespace datain {
+
+class PoolItemStream : public std::istream
+{
+public:
+    PoolItemStream(Pool& pool, const char* data_id);
+    PoolItemStream(const PoolItemStream& another) = delete;
+    PoolItemStream(PoolItemStream&& another) = delete;
+    virtual ~PoolItemStream() throw();
+
+    PoolItemStream& operator=(const PoolItemStream& another) = delete;
+    PoolItemStream& operator=(PoolItemStream&& another) = delete;
+}; //class PoolItemStream
 
 class StreamSink : public snappy::Sink
 {

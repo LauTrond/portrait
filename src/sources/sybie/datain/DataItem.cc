@@ -8,9 +8,9 @@
 namespace sybie {
 namespace datain {
 
-DataItem::DataItem(const char* data_id, const char* data_txt)
+DataItem::DataItem(const char* data_id, const int index, const char* data_txt)
 {
-    Pool::GetGlobalPool().Set(data_id, data_txt);
+    Pool::GetGlobalPool().Set(data_id, index, data_txt);
 }
 
 } //namespace datain

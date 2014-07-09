@@ -3,6 +3,8 @@
 #ifndef INCLUDE_SYBIE_DATAIN_POOL_HH
 #define INCLUDE_SYBIE_DATAIN_POOL_HH
 
+#include "sybie/datain/Pool_fwd.hh"
+
 namespace sybie {
 namespace datain {
 
@@ -18,8 +20,8 @@ public:
     Pool& operator=(const Pool& another) = delete;
     Pool& operator=(Pool&& another) = delete;
 
-    void Set(const char* data_id, const char* data);
-    const char* Get(const char* data_id) const;
+    void Set(const char* data_id, const int index, const char* data);
+    const char* Get(const char* data_id, const int index) const;
 private:
     void* _impl;
 }; //class Pool

@@ -10,7 +10,7 @@ namespace datain {
 class DataItem
 {
 public:
-    DataItem(const char* data_id, const char* data_txt);
+    DataItem(const char* data_id, const int index, const char* data_txt);
 };
 
 } //namespace datain

@@ -1,19 +1,21 @@
-#mac
+#Mac
 .DS_Store
 
-#makefile
-bin
-obj
+#Makefile
+make/*/bin
+make/*/obj
 
 #Eclipse project files
-*/.*
+.cproject
+.project
+.settings
 
 #Visual Studio
-*.sdf
-*.opensdf
-*.suo
-*.user
-x64
-Win32
-Release
-Debug
+vs*/*.sdf
+vs*/*.opensdf
+vs*/*.suo
+vs*/*.user
+vs*/x64
+vs*/Win32
+vs*/Release
+vs*/Debug

@@ -14,3 +14,9 @@ OS X下系统需求
 Windows下编译程序需求：
 1）VC 12（VS2013）（使用了一些C++11特性，较老版本不支持）
 2）OpenCV
+3）使用git的自动转换换行符功能，让所有源代码的换行符从\n转换为\r\n，提交时转换回\n，操作如下（Windows控制台）：
+git clone ... (本代码的地址)
+git config --local core.autocrlf true
+git config --local core.safecrlf true
+rd /s /q include src vs12
+git checkout .

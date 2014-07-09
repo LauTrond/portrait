@@ -12,5 +12,6 @@ obj
 *.sdf
 *.opensdf
 *.suo
+*.user
 x64
 Win32

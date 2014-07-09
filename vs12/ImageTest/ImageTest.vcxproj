@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{813CDEE4-E182-44E4-9217-ABDED046FCF1}</ProjectGuid>
-    <RootNamespace>Camera</RootNamespace>
+    <ProjectGuid>{276246FD-3644-4E1D-957F-47CBF4B0D050}</ProjectGuid>
+    <RootNamespace>ImageTest</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -66,19 +66,18 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
@@ -92,7 +91,6 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
@@ -108,7 +106,6 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
@@ -126,7 +123,6 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
@@ -138,13 +134,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\sources\portrait\haarcascade.cc" />
+    <ClCompile Include="..\..\src\sources\sample\main_imgtest.cc" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Library\Library.vcxproj">
       <Project>{343ec6db-5a4f-4bba-9156-7e65dbb77270}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\src\sources\portrait\haarcascade.cc" />
-    <ClCompile Include="..\..\src\sources\sample\main_camera.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

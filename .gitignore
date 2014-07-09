@@ -15,3 +15,5 @@ obj
 *.user
 x64
 Win32
+Release
+Debug

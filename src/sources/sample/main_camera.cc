@@ -29,6 +29,8 @@ int main(int argc, char** argv)
 
     //初始化摄像头
     cv::VideoCapture cam(-1);
+    if (!cam.isOpened())
+        throw std::runtime_error("Failed open camera.");
     cam.set(CV_CAP_PROP_FRAME_WIDTH, FrameWidth);
     cam.set(CV_CAP_PROP_FRAME_HEIGHT, FrameHeight);
 

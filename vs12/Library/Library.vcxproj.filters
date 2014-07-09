@@ -1,0 +1,205 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{84357abb-3f37-4055-99be-9f070fce0df3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{e128e7c1-6072-41a5-b890-b0244d42fb10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sources">
+      <UniqueIdentifier>{e6ecfa74-e3b4-4a1a-b5aa-39eb8527f5e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\headers">
+      <UniqueIdentifier>{76ed3603-54b5-4d6a-87b4-513604989e91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\portrait">
+      <UniqueIdentifier>{88fc3f7e-9480-4b15-a0ff-19a360dde649}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\headers\portrait">
+      <UniqueIdentifier>{df059afc-afbe-4a56-b5c4-85beecb52895}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\headers\sybie">
+      <UniqueIdentifier>{4b50e305-eba0-462d-bde6-f37b04c8f6b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\headers\snappy">
+      <UniqueIdentifier>{34c3af33-97ee-4690-9de6-0a5e5b3e6978}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\headers\sybie\common">
+      <UniqueIdentifier>{5c1cfb8e-2256-4444-88bb-2dc1738a599e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\headers\sybie\datain">
+      <UniqueIdentifier>{e1496475-458f-4c32-89fc-d569216ddf87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sources\snappy">
+      <UniqueIdentifier>{5b2aa9cc-cbea-417f-a68c-11b42450706c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sources\sybie">
+      <UniqueIdentifier>{0e380ae4-08e0-4323-ad51-389f3b2f339d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sources\portrait">
+      <UniqueIdentifier>{3344cf1d-2bfa-460b-bc57-6c5596c66953}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sources\sybie\common">
+      <UniqueIdentifier>{d887b32e-d55e-4b03-aae0-772ff2fa4aa0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sources\sybie\datain">
+      <UniqueIdentifier>{551b1014-d543-46be-bc92-59cab03f1491}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\portrait\exception.hh">
+      <Filter>include\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\portrait\portrait.hh">
+      <Filter>include\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\portrait\processing.hh">
+      <Filter>include\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\portrait\profiles.hh">
+      <Filter>include\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\snappy\snappy.h">
+      <Filter>src\headers\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\snappy\snappy-internal.h">
+      <Filter>src\headers\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\snappy\snappy-sinksource.h">
+      <Filter>src\headers\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\snappy\snappy-stubs-internal.h">
+      <Filter>src\headers\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\snappy\snappy-stubs-public.h">
+      <Filter>src\headers\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Arguments.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Arguments_fwd.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Event.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Event_fwd.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes_fwd.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Math.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\RichAssert.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Streaming.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Streaming_fwd.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Text.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Time.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Time_fwd.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Uncopyable.hh">
+      <Filter>src\headers\sybie\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\datain\Coding.hh">
+      <Filter>src\headers\sybie\datain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\datain\datain.hh">
+      <Filter>src\headers\sybie\datain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\datain\DataItem.hh">
+      <Filter>src\headers\sybie\datain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\datain\Pool.hh">
+      <Filter>src\headers\sybie\datain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\datain\Stream.hh">
+      <Filter>src\headers\sybie\datain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\datain\Stream_fwd.hh">
+      <Filter>src\headers\sybie\datain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\portrait\algorithm.hh">
+      <Filter>src\headers\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\portrait\facedetect.hh">
+      <Filter>src\headers\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vsfix.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\sources\portrait\algorithm.cc">
+      <Filter>src\sources\portrait</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\portrait\exception.cc">
+      <Filter>src\sources\portrait</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\portrait\facedetect.cc">
+      <Filter>src\sources\portrait</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\portrait\haarcascade.cc">
+      <Filter>src\sources\portrait</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\portrait\processing.cc">
+      <Filter>src\sources\portrait</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\common\Arguments.cc">
+      <Filter>src\sources\sybie\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\common\Event.cc">
+      <Filter>src\sources\sybie\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\common\ManagedRes.cc">
+      <Filter>src\sources\sybie\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\common\Streaming.cc">
+      <Filter>src\sources\sybie\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\common\Text.cc">
+      <Filter>src\sources\sybie\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\common\Time.cc">
+      <Filter>src\sources\sybie\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\datain\Coding.cc">
+      <Filter>src\sources\sybie\datain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\datain\DataItem.cc">
+      <Filter>src\sources\sybie\datain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\datain\Load.cc">
+      <Filter>src\sources\sybie\datain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\datain\Pool.cc">
+      <Filter>src\sources\sybie\datain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\sybie\datain\Stream.cc">
+      <Filter>src\sources\sybie\datain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\snappy\snappy.cc">
+      <Filter>src\sources\snappy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\snappy\snappy-sinksource.cc">
+      <Filter>src\sources\snappy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\snappy\snappy-stubs-internal.cc">
+      <Filter>src\sources\snappy</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

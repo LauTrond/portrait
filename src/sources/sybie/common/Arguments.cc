@@ -22,9 +22,9 @@ private:
 public:
     ShellArgumentsImpl() = default;
     ShellArgumentsImpl(const ShellArgumentsImpl& another) = default;
-    ShellArgumentsImpl(ShellArgumentsImpl&& another) = default;
+    ShellArgumentsImpl(ShellArgumentsImpl&& another) = delete;
     ShellArgumentsImpl& operator=(const ShellArgumentsImpl& another) = default;
-    ShellArgumentsImpl& operator=(ShellArgumentsImpl&& another) = default;
+    ShellArgumentsImpl& operator=(ShellArgumentsImpl&& another) = delete;
     ~ShellArgumentsImpl() = default;
 
     void Add(const Argument& arg) throw(std::logic_error)

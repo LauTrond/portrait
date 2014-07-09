@@ -1,0 +1,218 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{343EC6DB-5A4F-4BBA-9156-7E65DBB77270}</ProjectGuid>
+    <RootNamespace>Library</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OPENCV_ROOT)\build\$(PlatformTarget)\vc12\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OPENCV_ROOT)\build\$(PlatformTarget)\vc12\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OPENCV_ROOT)\build\$(PlatformTarget)\vc12\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OPENCV_ROOT)\build\include;$(SolutionDir)..\include;$(SolutionDir)..\src\headers;$(SolutionDir)..\src\headers\snappy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(SolutionDir)src\vsfix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OPENCV_ROOT)\build\$(PlatformTarget)\vc12\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\portrait\exception.hh" />
+    <ClInclude Include="..\..\include\portrait\portrait.hh" />
+    <ClInclude Include="..\..\include\portrait\processing.hh" />
+    <ClInclude Include="..\..\include\portrait\profiles.hh" />
+    <ClInclude Include="..\..\src\headers\portrait\algorithm.hh" />
+    <ClInclude Include="..\..\src\headers\portrait\facedetect.hh" />
+    <ClInclude Include="..\..\src\headers\snappy\snappy-internal.h" />
+    <ClInclude Include="..\..\src\headers\snappy\snappy-sinksource.h" />
+    <ClInclude Include="..\..\src\headers\snappy\snappy-stubs-internal.h" />
+    <ClInclude Include="..\..\src\headers\snappy\snappy-stubs-public.h" />
+    <ClInclude Include="..\..\src\headers\snappy\snappy.h" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Arguments.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Arguments_fwd.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Event.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Event_fwd.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes_fwd.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Math.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\RichAssert.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Streaming.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Streaming_fwd.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Text.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Time.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Time_fwd.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\common\Uncopyable.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\datain\Coding.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\datain\datain.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\datain\DataItem.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\datain\Pool.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\datain\Stream.hh" />
+    <ClInclude Include="..\..\src\headers\sybie\datain\Stream_fwd.hh" />
+    <ClInclude Include="..\src\vsfix.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\sources\portrait\algorithm.cc" />
+    <ClCompile Include="..\..\src\sources\portrait\exception.cc" />
+    <ClCompile Include="..\..\src\sources\portrait\facedetect.cc" />
+    <ClCompile Include="..\..\src\sources\portrait\haarcascade.cc" />
+    <ClCompile Include="..\..\src\sources\portrait\processing.cc" />
+    <ClCompile Include="..\..\src\sources\snappy\snappy-sinksource.cc" />
+    <ClCompile Include="..\..\src\sources\snappy\snappy-stubs-internal.cc" />
+    <ClCompile Include="..\..\src\sources\snappy\snappy.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\common\Arguments.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\common\Event.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\common\ManagedRes.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\common\Streaming.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\common\Text.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\common\Time.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\datain\Coding.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\datain\DataItem.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\datain\Load.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\datain\Pool.cc" />
+    <ClCompile Include="..\..\src\sources\sybie\datain\Stream.cc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

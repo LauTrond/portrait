@@ -21,7 +21,7 @@ typedef long long ssize_t;
 #define OPENCV_CONFIGURE ""
 #endif
 
-#define OPENCV_LIB(libname) libname "opencv_" OPENCV_VERSION OPENCV_CONFIGURE ".lib"
+#define OPENCV_LIB(libname) "opencv_" libname OPENCV_VERSION OPENCV_CONFIGURE ".lib"
 #pragma comment(lib, OPENCV_LIB("core"))
 #pragma comment(lib, OPENCV_LIB("highgui"))
 #pragma comment(lib, OPENCV_LIB("imgproc"))

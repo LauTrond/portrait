@@ -20,15 +20,15 @@ const std::vector<cv::Vec3b> NewBackColor({
 
 int main(int argc, char** argv)
 {
-    cv::namedWindow(WindowName + "_src", CV_WINDOW_AUTOSIZE);
-    for (int i = 0 ; i < NewBackColor.size() ; i++)
-        cv::namedWindow(WindowName + std::to_string(i), CV_WINDOW_AUTOSIZE);
-
     if (argc < 2)
     {
-        std::cout<<"Usage: imgtest <files...>"<<std::endl;
+        std::cout<<"Usage: " << argv[0] << " <files...>"<<std::endl;
         return 1;
     }
+
+    cv::namedWindow(WindowName + "_src", CV_WINDOW_AUTOSIZE);
+    for (int i = 0; i < NewBackColor.size(); i++)
+        cv::namedWindow(WindowName + std::to_string(i), CV_WINDOW_AUTOSIZE);
 
     int index = 1; //显示的文件索引
     while (true)

@@ -6,7 +6,7 @@
 #include "portrait/portrait.hh"
 #include "sybie/common/Time.hh"
 
-using namespace portrait;
+namespace portrait {
 
 const std::string WindowName = "Portrait";
 enum { FaceResizeTo = 200 };
@@ -18,7 +18,7 @@ const std::vector<cv::Vec3b> NewBackColor({
 {240, 240, 240}
 });
 
-int main(int argc, char** argv)
+int _main(int argc, char** argv)
 {
     if (argc < 2)
     {
@@ -84,6 +84,23 @@ int main(int argc, char** argv)
             }
         }
 
+    }
+
+    return 0;
+}
+
+}  //namespace portrait
+
+int main(int argc, char** argv)
+{
+    try
+    {
+        portrait::_main(argc, argv);
+    }
+    catch (std::exception& ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        return 1;
     }
 
     return 0;

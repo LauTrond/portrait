@@ -1,22 +1,48 @@
-Linux、OSX下使用：
-1）进入make/camera子目录，执行make编译。
-2）执行make run启动。
+＝＝＝＝证件照生成模块＝＝＝＝
+
+＝＝各子目录＝＝
+
+src：包含模块的源代码文件和内部头文件。
+include：包含模块的接口头文件.
+make：Linux、OS X 的Makefile
+vs12：Visual Studio 2013解决方案，包含几个示例。
+
+＝＝示例＝＝
+
+camera － 用摄像头拍照演示，用任意键拍照，用ESC退出）
+imgtest － 加载多个图片演示，用“,”“.”在图片间切换，用ESC退出）
+edit － 用摄像头捕捉图像或加载一个图片，然后用鼠标编辑，演示编辑功能）
+
+所有示例使用OpenCV的窗口功能来展示，因此只能在GUI环境下使用。
+
+Linux、OS X下编译和使用示例程序：
+1）进入make子目录，执行make编译所有示例程序。
+2）示例程序编译后的位置在：
+  make/camera/bin/release/camera
+  make/imgtest/bin/release/imgtest
+  make/edit/bin/release/edit
+
+Windows下编译和使用示例程序：
+用VS2013以上版本打开vs12中的解决方案。
+
+＝＝系统需求＝＝
 
 Linux下系统需求：
-1）GCC 4.8以上版本。（使用了一些C++11特性，较老版本不支持）
-2）OpenCV
+1）GCC 4.8以上版本
+2）OpenCV 2.4 以上版本
 
 OS X下系统需求
-1）GCC 4.8或者Apple LLVM 5.1以上版本（使用了一些C++11特性，较老版本不支持）
-2）OpenCV
+1）最新版的XCode
+2）OpenCV 2.4 以上版本
 3）pkg-config
 
 Windows下编译程序需求：
-1）VC 12（VS2013）（使用了一些C++11特性，较老版本不支持）
-2）OpenCV
+1）Visual C++ 12.0（Visual Studio 2013）以上版本
+2）OpenCV 2.4 以上版本
 3）使用git的自动转换换行符功能，让所有源代码的换行符从\n转换为\r\n，提交时转换回\n，操作如下（Windows控制台）：
-git clone ... (本代码的地址)
-git config --local core.autocrlf true
-git config --local core.safecrlf true
-rd /s /q include src vs12
-git checkout .
+git clone git@.../portrait.git &rem 从代码库取出代码
+cd portrait
+git config --local core.autocrlf true &rem 设置自动转换换行符
+git config --local core.safecrlf true &rem 设置换行符安全检查（同一个文件同时存在两种换行符则不允许提交）
+rd /s /q include src vs12 &rem 删除已取出的代码
+git checkout &rem 重新取出代码，让设置生效

@@ -13,6 +13,7 @@ SRC_FILES:= \
     sybie/common/Event.cc \
     sybie/common/ManagedRes.cc \
     sybie/common/Streaming.cc \
+    sybie/common/Text.cc \
     sybie/common/Time.cc \
     sybie/datain/Coding.cc \
     sybie/datain/DataItem.cc \

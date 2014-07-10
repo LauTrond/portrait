@@ -2,10 +2,10 @@
 
 ＝＝各子目录＝＝
 
-src：包含模块的源代码文件和内部头文件。
-include：包含模块的接口头文件.
-make：Linux、OS X 的Makefile
-vs12：Visual Studio 2013解决方案，包含几个示例。
+src － 包含模块的源代码文件和内部头文件。
+include － 包含模块的接口头文件。
+make － Linux、OS X 的Makefile。
+vs12 － Visual Studio 2013解决方案。
 
 ＝＝示例＝＝
 

@@ -35,7 +35,10 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset);
 // 返回结果的width和height与rect1相同，x和y分别减去rect2的x和y。
 cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2);
 
+// 向量模
 int ModulusOf(const cv::Vec3i& vec);
+// 计算vec1和vec2的内积
+int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2);
 
 /* 给出图像（image）和其中人脸的位置（face_area），
  * 按max_up_expand、max_down_expand、max_width_expand指定的上下左右范围，

@@ -140,9 +140,14 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2)
     return SubArea(rect1, TopLeft(rect2));
 }
 
-int ModulusOf(const cv::Vec3i& vec)
+inline int ModulusOf(const cv::Vec3i& vec)
 {
     return (int)sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+}
+
+inline int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2)
+{
+    return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
 
 cv::Rect TryCutPortrait(
@@ -397,10 +402,19 @@ cv::Mat GetFrontBackMask(
                     if (cnt_back > 0 && cnt_front > 0)
                     {
                         cv::Vec3i cur = (cv::Vec3i)image.at<cv::Vec3b>(r,c);
-                        int dist_back = cnt_front * ModulusOf(sum_back - cur * cnt_back);
+
+                        cv::Vec3i adv_back = sum_back / cnt_back,
+                                  adv_front = sum_front / cnt_front;
+                        cv::Vec3i diff_cur_back = cur - adv_back,
+                                  diff_front_back = adv_front - adv_back;
+                        int alpha_int = 255 * DotProduct(diff_cur_back, diff_front_back) /
+                                        std::max(1, DotProduct(diff_front_back, diff_front_back));
+                        alpha = std::max(0, std::min(255, alpha_int));
+
+                        /*int dist_back = cnt_front * ModulusOf(sum_back - cur * cnt_back);
                         int dist_front = cnt_back * ModulusOf(sum_front - cur * cnt_front);
                         if (dist_front + dist_back > 0)
-                            alpha = 255 * dist_back / (dist_front + dist_back);
+                            alpha = 255 * dist_back / (dist_front + dist_back);*/
                     }
                     else if (cnt_back > 0 || cnt_front > 0)
                     {

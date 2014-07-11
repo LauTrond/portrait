@@ -1,0 +1,24 @@
+关于<portrait主目录>/src/sources/portrait/haarcascade.cc：
+
+haarcascade.cc把人脸检测模型数据文件(haarcascade_frontalface_alt.xml)嵌入到代码中，
+编译可执行程序时需要把这个文件一起编译。
+嵌入代码可以让程序运行依赖额外文件。
+haarcascade.cc使用DataIn工具来生成。
+
+如何更新haarcascade.cc：
+
+如果要更新模型，可以用DataIn重新生成haarcascade.cc并提交。
+DataIn工具的Makefile在<portrait主目录>/make/datain，
+编译出的可执行文件是<portrait主目录>/make/datain/bin/release/datain,
+暂时没有Visual Studio工程。
+
+＝＝＝＝生成命令（在<portrait主目录>下操作）＝＝＝＝
+
+#编译DataIn
+make -C make/datain
+
+#生成并覆盖haarcascade.cc（注意，根据OpenCV安装路径，修改haarcascade_frontalface_alt.xml的位置）
+make/datain/bin/release/datain -o=src/sources/portrait/haarcascade.cc \
+  /usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml
+
+＝＝＝＝＝＝＝＝＝＝＝＝

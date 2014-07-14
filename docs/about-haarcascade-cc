@@ -2,7 +2,7 @@
 
 haarcascade.cc把OpenCV的人脸检测模型数据文件(haarcascade_frontalface_alt.xml)嵌入到代码中，
 编译可执行程序时需要把这个文件一起编译。
-嵌入代码可以让程序运行依赖额外文件，并且在所有平台都可用。
+嵌入代码可以让程序运行不依赖额外文件，并且在所有平台都可用。
 haarcascade.cc使用DataIn工具来生成。
 
 如何更新haarcascade.cc：

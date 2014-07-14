@@ -73,7 +73,7 @@ void Generate(std::istream& is, std::ostream& os,
         do
         {
             is_txt->read(row_data.get(),
-                        std::min<size_t>(RowSize, part_size - sum_bytes_read));
+                         std::min<size_t>(RowSize, part_size - sum_bytes_read));
             size_t bytes_read = is_txt->gcount();
             sum_bytes_read += bytes_read;
 

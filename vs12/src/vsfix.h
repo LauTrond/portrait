@@ -1,7 +1,7 @@
-﻿//Disable warning of compiling source files of UTF-8 without BOM.
-#pragma warning(disable: 4819)
+﻿//在VC++下，所有C++源文件都包含这个文件（使用强制包含文件功能）。
 
-//在VC++下，所有C++源文件都包含这个文件（使用强制包含文件功能）。
+//禁止编译UTF-8 without BOM源代码时的警告。
+#pragma warning(disable: 4819)
 
 //允许使用tmpnam()
 #define _CRT_SECURE_NO_WARNINGS

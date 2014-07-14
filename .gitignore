@@ -11,14 +11,12 @@ make/*/obj
 .settings
 
 #Visual Studio
+vs12/x64
+vs12/Win32
 vs12/*.sdf
 vs12/*.opensdf
 vs12/*.suo
 vs12/*.user
-vs12/*/*.user
 vs12/*/x64
 vs12/*/Win32
-vs12/x64
-vs12/Win32
-vs12/Release
-vs12/Debug
+vs12/*/*.user

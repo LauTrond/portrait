@@ -34,12 +34,12 @@ public:
                              "default=basename(<input filename>)"));
         Add(common::Argument("out","out",'o',common::Variant,
                              "Output file, overwrite it if exists.\n"
-                             "default=basename(<id>)+.cc"));
+                             "default=<id>.cc"));
         Add(common::Argument("noswp","noswp",'n',common::Flag,
                              "Disable swap file, overwrite output file directly.\n"
-                             "Useful for output to sepcial file (i.e. /dev/stdout)"));
+                             "Useful while output to /dev/stdout"));
         Add(common::Argument("psize","psize",'s',common::Variant,
-                             (std::string)"Spilit size, not less than "
+                             (std::string)"Split size, not less than "
                              + std::to_string(MinPartSize)
                              + ", default = "
                              + std::to_string(DefaultPartSize)));

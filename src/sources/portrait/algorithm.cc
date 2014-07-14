@@ -140,14 +140,14 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2)
     return SubArea(rect1, TopLeft(rect2));
 }
 
-inline int ModulusOf(const cv::Vec3i& vec)
-{
-    return (int)sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
-}
-
 inline int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2)
 {
     return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
+}
+
+inline int ModulusOf(const cv::Vec3i& vec)
+{
+    return (int)sqrt(DotProduct(vec, vec));
 }
 
 cv::Rect TryCutPortrait(

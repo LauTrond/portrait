@@ -35,10 +35,10 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset);
 // 返回结果的width和height与rect1相同，x和y分别减去rect2的x和y。
 cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2);
 
-// 向量模
-int ModulusOf(const cv::Vec3i& vec);
 // 计算vec1和vec2的内积
 int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2);
+// 向量模
+int ModulusOf(const cv::Vec3i& vec);
 
 /* 给出图像（image）和其中人脸的位置（face_area），
  * 按max_up_expand、max_down_expand、max_width_expand指定的上下左右范围，
@@ -64,8 +64,6 @@ cv::Rect ResizeFace(
     const cv::Size& face_resize_to);
 
 /* 根据图像（image）和其中的人脸位置（face_area）抠出人像，
- *
- *
  * 返回一个与image同尺寸的矩阵，类型时CV_8UC4，
  * 前三通道的格式与image相同，表示image中每个像素的背景色（可能是近似）
  * 第四通道为Alpha，表示前景的混合比例。

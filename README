@@ -32,7 +32,7 @@ Linux下系统需求：
 2）OpenCV 2.4 以上版本
 
 OS X下系统需求
-1）最新版的XCode
+1）最新版的XCode（包含编译器）
 2）OpenCV 2.4 以上版本
 3）pkg-config
 
@@ -45,4 +45,4 @@ cd portrait
 git config --local core.autocrlf true &rem 设置自动转换换行符
 git config --local core.safecrlf true &rem 设置换行符安全检查（同一个文件同时存在两种换行符则不允许提交）
 rd /s /q include src vs12 &rem 删除已取出的代码
-git checkout &rem 重新取出代码，让设置生效
+git checkout . &rem 重新取出代码，让设置生效

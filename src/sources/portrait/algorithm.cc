@@ -10,7 +10,7 @@
 namespace portrait {
 
 const int
-    BorderSize = 3,
+    BorderSize = 5,
     MixSize = BorderSize * 2 + 1;
 
 const int GrabCutInteration = 3;
@@ -143,6 +143,11 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2)
 inline int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2)
 {
     return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
+}
+
+inline int DotProduct(const cv::Vec3i& vec)
+{
+    return DotProduct(vec, vec);
 }
 
 inline int ModulusOf(const cv::Vec3i& vec)
@@ -430,6 +435,309 @@ cv::Mat GetFrontBackMask(
     return result;
 }
 
+//GetMixRaw函数内使用的组件
+namespace {
+
+inline bool IsFront(uint8_t val)
+{
+    return val == cv::GC_FGD || val == cv::GC_PR_FGD;
+}
+
+inline bool IsBack(uint8_t val)
+{
+    return val == cv::GC_BGD || val == cv::GC_PR_BGD;
+}
+
+template<class T>
+inline T Squeue(T a)
+{
+    return a * a;
+}
+
+template<class Tval, class Tcnt = int>
+class Mean
+{
+public:
+    Mean() : _sum(), _count(0) { }
+    Mean(const Tval& zero) : _sum(zero), _count(0) { }
+
+    void Count(const Tval& val)
+    {
+        _sum += val;
+        _count++;
+    }
+
+    Tval Get() const
+    {
+        if (_count == 0)
+            return _sum;
+        else
+            return _sum / _count;
+    }
+
+    Tcnt Count() const
+    {
+        return _count;
+    }
+
+    Tval Sum() const
+    {
+        return _sum;
+    }
+private:
+    Tval _sum;
+    Tcnt _count;
+}; //template<class T> class Mean
+
+template<class T>
+uint8_t TruncByte(T val)
+{
+    return (uint8_t)std::max<T>(0, std::min<T>(255, val));
+}
+
+cv::Vec3b TruncVec(const cv::Vec3i& val)
+{
+    return cv::Vec3b(TruncByte(val[0]),
+                     TruncByte(val[1]),
+                     TruncByte(val[2]));
+}
+
+template<class T>
+void CheckedFloodFill(cv::Mat& image,
+                             const cv::Point& seed_point,
+                             const cv::Scalar& old_val,
+                             const cv::Scalar& new_val)
+{
+    if (cv::Scalar(image.at<T>(seed_point)) == old_val)
+        cv::floodFill(image, seed_point, new_val);
+}
+
+void Clear(cv::Mat& mask)
+{
+    cv::Mat mask_tmp(mask.rows, mask.cols, CV_8UC1);
+    for (int r = 0 ; r < mask.rows ; r++)
+        for (int c = 0 ; c < mask.cols ; c++)
+            mask_tmp.at<uint8_t>(r,c) = IsFront(mask.at<uint8_t>(r,c));
+
+    CheckedFloodFill<uint8_t>(
+        mask_tmp, cv::Point(0,0), 0, 2);
+    CheckedFloodFill<uint8_t>(
+        mask_tmp, cv::Point(mask_tmp.cols-1,0),  0, 2);
+    CheckedFloodFill<uint8_t>(
+        mask_tmp, cv::Point(mask_tmp.cols/2,mask_tmp.rows-1), 1, 3);
+
+    for (int r = 0 ; r < mask.rows ; r++)
+        for (int c = 0 ; c < mask.cols ; c++)
+        {
+            uint8_t t = mask_tmp.at<uint8_t>(r,c) ;
+            uint8_t& m = mask.at<uint8_t>(r,c);
+            if (t == 1 && m == cv::GC_PR_FGD) //孤立前景
+                m = cv::GC_PR_BGD;
+            if (t == 0 && m == cv::GC_PR_BGD) //孤立背景
+                m = cv::GC_PR_FGD;
+        }
+}
+
+int CalcBorderRaw(
+    cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
+{
+    sybie_assert(   raw.size() == image.size()
+                 && image.size() == mask.size())
+        << SHOW(raw.size())
+        << SHOW(image.size())
+        << SHOW(mask.size());
+
+    //计算前景和背景平均值
+    Mean<cv::Vec3i> mean[2];
+    mean[0] = mean[1] = Mean<cv::Vec3i>(cv::Vec3i(0,0,0));
+    for (int r = 0 ; r < image.rows ; r++)
+        for (int c = 0 ; c < image.cols ; c++)
+        {
+            //在循环内避免使用条件判断（避免CPU分支预测错误）以提高性能
+            mean[IsFront(mask.at<uint8_t>(r,c))]
+                .Count((cv::Vec3i)image.at<cv::Vec3b>(r,c));
+        }
+    cv::Vec3i mean_val[2];
+    for (int i = 0 ; i < 2 ; i++)
+        mean_val[i] = mean[i].Get();
+    const cv::Vec3i mean_back = mean_val[0],
+                    mean_front = mean_val[1];
+    cv::Vec3i diff = mean_front - mean_back;
+    int abs_diff = DotProduct(diff);
+    if (abs_diff == 0)
+        abs_diff = 1;
+
+    //计算前景和背景方差
+    int sum_squeue_diff[2] = {1, 1};
+    for (int r = 0 ; r < image.rows ; r++)
+        for (int c = 0 ; c < image.cols ; c++)
+        {
+            int is_front = IsFront(mask.at<uint8_t>(r,c));
+            sum_squeue_diff[is_front] +=
+                DotProduct((cv::Vec3i)image.at<cv::Vec3b>(r,c) - mean_val[is_front]);
+        }
+
+    std::unique_ptr<int[]> rgr_map(new int[image.rows * image.cols]);
+    std::vector<int> rgr_vec[2];
+    for (auto& v : rgr_vec)
+        v.reserve(image.rows * image.cols);
+    for (int r = 0 ; r < image.rows ; r++)
+        for (int c = 0 ; c < image.cols ; c++)
+        {
+            int rgr_val = DotProduct(
+                diff, (cv::Vec3i)image.at<cv::Vec3b>(r,c) - mean_back);
+            rgr_map[r * image.cols + c] = rgr_val;
+            rgr_vec[IsFront(mask.at<uint8_t>(r,c))]
+                .push_back(rgr_val);
+        }
+    for (auto& v : rgr_vec)
+        std::sort(v.begin(), v.end());
+    int rgr_back = rgr_vec[0][rgr_vec[0].size() / 4],
+        rgr_front = rgr_vec[1][rgr_vec[1].size() / 2];
+    int rgr_diff = rgr_front - rgr_back;
+    if (rgr_diff == 0)
+        rgr_diff = 1;
+
+    cv::Vec3i back_int = diff * ((double)rgr_back / abs_diff) + mean_back;
+    cv::Vec3b back_byte = TruncVec(back_int);
+    for (int r = 0 ; r < image.rows ; r++)
+        for (int c = 0 ; c < image.cols ; c++)
+        {
+            cv::Vec4b& raw_pixel = raw.at<cv::Vec4b>(r,c);
+            int rgr_val = rgr_map[r * image.cols + c];
+            int alpha = 255 * (rgr_val - rgr_back) / rgr_diff;
+            raw_pixel[3] = TruncByte(alpha);
+            *(cv::Vec3b*)&raw_pixel = back_byte;
+            //*(cv::Vec3b*)&raw_pixel = mean_back;
+        }
+
+    return sum_squeue_diff[0] * sum_squeue_diff[1];
+}
+
+} //namespace GetMixRaw内使用的组件
+
+cv::Mat GetMixRaw(
+    const cv::Mat& image,
+    const cv::Rect& face_area,
+    const cv::Mat& stroke)
+{
+    sybie_assert(Inside(face_area, image))
+        << SHOW(face_area)
+        << SHOW(image.rows)
+        << SHOW(image.cols);
+
+    //初始化前景/背景掩码
+    cv::Mat mask(image.rows, image.cols, CV_8UC1);
+    DrawMask(mask, face_area, true, cv::GC_PR_FGD,
+             cv::GC_FGD, cv::GC_PR_BGD, cv::GC_BGD, CV_FILLED);
+
+    //自定义的关键点
+    if (stroke.data != nullptr)
+    {
+        for (int r = 0 ; r < stroke.rows ; r++)
+            for (int c = 0 ; c < stroke.cols ; c++)
+            {
+                uint8_t stroke_point = stroke.at<uint8_t>(r,c);
+                if ( stroke_point == cv::GC_FGD ||
+                     stroke_point == cv::GC_BGD)
+                    mask.at<uint8_t>(r,c) = stroke_point;
+            }
+    }
+
+    //使用cv::grabCut分离前景和背景
+    {
+        sybie::common::StatingTestTimer timer("GetMixRaw.grabCut");
+
+        cv::Size full_size(image.cols,
+                           image.rows); //缩略图尺寸
+        cv::Size grab_size(image.cols * GrabCutWidthScale,
+                           image.rows * GrabCutHeightScale); //GrabCut缩略图尺寸
+        cv::Size init_size(image.cols * GrabCutInitWidthScale,
+                           image.rows * GrabCutInitHeightScale); //GrabCut初始化尺寸
+
+        cv::Mat bgModel,fgModel; //前景模型、背景模型
+
+        //初始化模型
+        cv::Mat image_init, mask_init;
+        cv::resize(image, image_init, init_size, 0, 0, cv::INTER_AREA);
+        cv::resize(mask, mask_init, init_size, 0, 0, cv::INTER_NEAREST);
+        cv::grabCut(image_init, mask_init, cv::Rect(),
+                    bgModel,fgModel,
+                    0, cv::GC_INIT_WITH_MASK);
+
+        //抠图
+        cv::Mat image_grab, mask_grab;
+        cv::resize(image, image_grab, grab_size, 0, 0, cv::INTER_AREA);
+        cv::resize(mask, mask_grab, grab_size, 0, 0, cv::INTER_NEAREST);
+        cv::grabCut(image_grab, mask_grab, cv::Rect(),
+                    bgModel,fgModel,
+                    GrabCutInteration, cv::GC_EVAL);
+
+        //抠图结果恢复到最大尺寸
+        cv::resize(mask_grab, mask,
+                   full_size, 0, 0,
+                   cv::INTER_NEAREST);
+    }
+
+    {
+        sybie::common::StatingTestTimer timer("GetMixRaw.Clear");
+        Clear(mask);
+    }
+
+    cv::Mat raw(image.rows, image.cols, CV_8UC4);
+    {
+        sybie::common::StatingTestTimer timer("GetMixRaw.FindBorder");
+
+        cv::Mat tmp_raw(BorderSize * 2 + 1, BorderSize * 2 + 1, CV_8UC4);
+        std::unique_ptr<int[]> dist_map(new int[image.rows * image.cols]);
+
+        for (int r = 0 ; r < image.rows ; r++)
+            for (int c = 0 ; c < image.cols ; c++)
+            {
+                const cv::Vec3b& pixel = image.at<cv::Vec3b>(r,c);
+                const uint8_t pixel_alpha =
+                    IsFront(mask.at<uint8_t>(r,c)) ? 0xff : 0;
+                raw.at<cv::Vec4b>(r,c) = cv::Vec4b(
+                    pixel[0], pixel[1], pixel[2], pixel_alpha);
+                dist_map[r * image.cols + c] = 0x7fffffff;
+            }
+        for (int r = BorderSize ; r < image.rows - BorderSize ; r++)
+            for (int c = BorderSize ; c < image.cols - BorderSize ; c++)
+            {
+                if (IsBack(mask.at<uint8_t>(r,c)))
+                    continue;
+
+                if (   IsFront(mask.at<uint8_t>(r - 1,c))
+                    && IsFront(mask.at<uint8_t>(r + 1,c))
+                    && IsFront(mask.at<uint8_t>(r,c - 1))
+                    && IsFront(mask.at<uint8_t>(r,c + 1)))
+                    continue;
+
+                //边缘像素，计算边缘混合比例
+                cv::Rect sub_area(c - BorderSize,
+                                  r - BorderSize,
+                                  BorderSize * 2 + 1,
+                                  BorderSize * 2 + 1);
+                int dist_cur = CalcBorderRaw(tmp_raw,
+                                             image(sub_area),
+                                             mask(sub_area));
+                for (int rr = -BorderSize ; rr <= BorderSize ; rr++)
+                    for (int cc = -BorderSize ; cc <= BorderSize ; cc++)
+                    {
+                        int& dist_old = dist_map[(r + rr) * image.cols + (c + cc)];
+                        if (dist_old > dist_cur)
+                        {
+                            dist_old = dist_cur;
+                            raw.at<cv::Vec4b>(r + rr, c + cc) =
+                                tmp_raw.at<cv::Vec4b>(BorderSize + rr, BorderSize + cc);
+                        }
+                    }
+            }
+    }
+
+    return raw;
+}
+
 void DrawGrabCutLines(
     cv::Mat& image,
     const cv::Rect& face_area)
@@ -474,8 +782,8 @@ cv::Mat Mix(
 
             const cv::Vec3b& src = image.at<cv::Vec3b>(r,c);
             cv::Vec3b& mix = image_mix.at<cv::Vec3b>(r,c);
-            mix = (cv::Vec3i)src + (cv::Vec3i)((cv::Vec3i)back_color - (cv::Vec3i)backc)
-                        * (1 - (double)pixiel_alpha / 255) * mix_alpha;
+            mix = (cv::Vec3i)src + (((cv::Vec3i)back_color - (cv::Vec3i)backc)
+                        * (1 - (double)pixiel_alpha / 255) * mix_alpha);
         }
     return image_mix;
 }

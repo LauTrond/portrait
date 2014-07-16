@@ -37,6 +37,8 @@ cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2);
 
 // 计算vec1和vec2的内积
 int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2);
+// 计算DotProduct(vec,vec)的内积
+int DotProduct(const cv::Vec3i& vec);
 // 向量模
 int ModulusOf(const cv::Vec3i& vec);
 
@@ -70,6 +72,11 @@ cv::Rect ResizeFace(
  * 对于Alpha为255的点（全前景），前3通道无意义。
  */
 cv::Mat GetFrontBackMask(
+    const cv::Mat& image,
+    const cv::Rect& face_area,
+    const cv::Mat& stroke);
+//改进中的算法
+cv::Mat GetMixRaw(
     const cv::Mat& image,
     const cv::Rect& face_area,
     const cv::Mat& stroke);

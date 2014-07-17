@@ -4,6 +4,8 @@
 #ifndef INCLUDE_PORTRAIT_GRAPHICS_HH
 #define INCLUDE_PORTRAIT_GRAPHICS_HH
 
+#include <cstdint>
+
 #include "opencv2/opencv.hpp"
 
 namespace portrait {

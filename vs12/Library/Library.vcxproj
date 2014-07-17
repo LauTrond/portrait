@@ -164,6 +164,9 @@
     <ClInclude Include="..\..\include\portrait\profiles.hh" />
     <ClInclude Include="..\..\src\headers\portrait\algorithm.hh" />
     <ClInclude Include="..\..\src\headers\portrait\facedetect.hh" />
+    <ClInclude Include="..\..\src\headers\portrait\graphics.hh" />
+    <ClInclude Include="..\..\src\headers\portrait\math.hh" />
+    <ClInclude Include="..\..\src\headers\portrait\matting.hh" />
     <ClInclude Include="..\..\src\headers\snappy\snappy-internal.h" />
     <ClInclude Include="..\..\src\headers\snappy\snappy-sinksource.h" />
     <ClInclude Include="..\..\src\headers\snappy\snappy-stubs-internal.h" />
@@ -195,7 +198,9 @@
     <ClCompile Include="..\..\src\sources\portrait\algorithm.cc" />
     <ClCompile Include="..\..\src\sources\portrait\exception.cc" />
     <ClCompile Include="..\..\src\sources\portrait\facedetect.cc" />
+    <ClCompile Include="..\..\src\sources\portrait\graphics.cc" />
     <ClCompile Include="..\..\src\sources\portrait\haarcascade.cc" />
+    <ClCompile Include="..\..\src\sources\portrait\matting.cc" />
     <ClCompile Include="..\..\src\sources\portrait\processing.cc" />
     <ClCompile Include="..\..\src\sources\snappy\snappy-sinksource.cc" />
     <ClCompile Include="..\..\src\sources\snappy\snappy-stubs-internal.cc" />

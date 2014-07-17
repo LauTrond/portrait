@@ -142,6 +142,15 @@
       <Filter>src\headers\portrait</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vsfix.h" />
+    <ClInclude Include="..\..\src\headers\portrait\graphics.hh">
+      <Filter>src\headers\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\portrait\math.hh">
+      <Filter>src\headers\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\portrait\matting.hh">
+      <Filter>src\headers\portrait</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\sources\portrait\algorithm.cc">
@@ -200,6 +209,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\sources\snappy\snappy-stubs-internal.cc">
       <Filter>src\sources\snappy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\portrait\graphics.cc">
+      <Filter>src\sources\portrait</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sources\portrait\matting.cc">
+      <Filter>src\sources\portrait</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

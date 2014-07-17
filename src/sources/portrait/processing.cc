@@ -4,6 +4,7 @@
 
 #include "portrait/exception.hh"
 #include "portrait/algorithm.hh"
+#include "portrait/graphics.hh"
 #include "portrait/facedetect.hh"
 
 namespace portrait {
@@ -118,7 +119,7 @@ SemiData PortraitProcessSemi(
         0.6, 0.6, 0.4); //经验参数：裁剪出超过所有已知证件照规格的尺寸
     data.face_area = ResizeFace(data.image, data.face_area,
                                 cv::Size(face_resize_to, face_resize_to));
-    data.raw = GetFrontBackMask(data.image, data.face_area, cv::Mat());
+    data.raw = GetMixRaw(data.image, data.face_area, cv::Mat());
 
     return semi;
 }
@@ -126,7 +127,7 @@ SemiData PortraitProcessSemi(
 void SetStroke(SemiData& semi, const cv::Mat& stroke)
 {
     SemiDataImpl& data = SemiDataImpl::GetFrom(semi);
-    data.raw = GetFrontBackMask(data.image, data.face_area, stroke);
+    data.raw = GetMixRaw(data.image, data.face_area, stroke);
 }
 
     static cv::Rect GetCropArea(const cv::Rect face_area,

@@ -1,11 +1,13 @@
 //这是对algorithm.hh的实现
 #include "portrait/algorithm.hh"
 
-#include <algorithm>
-#include <cmath>
-
 #include "sybie/common/RichAssert.hh"
 #include "sybie/common/Time.hh"
+#include "sybie/common/Graphics/Structs.hh"
+
+#include "portrait/math.hh"
+#include "portrait/graphics.hh"
+#include "portrait/matting.hh"
 
 namespace portrait {
 
@@ -46,114 +48,6 @@ const double
 const double
     FGBodyTop = 0.30,
     FGBodySide = 0.00;
-
-cv::Point CenterOf(const cv::Rect& rect)
-{
-    return cv::Point(rect.x + rect.width / 2,
-                     rect.y + rect.height / 2);
-}
-
-cv::Rect WholeArea(const cv::Mat& image)
-{
-    return cv::Rect(0, 0, image.cols, image.rows);
-}
-
-cv::Point TopLeft(const cv::Mat& image)
-{
-    return cv::Point(0,0);
-}
-
-cv::Point TopRight(const cv::Mat& image)
-{
-    return cv::Point(image.cols - 1, 0);
-}
-
-cv::Point BottomLeft(const cv::Mat& image)
-{
-    return cv::Point(0, image.rows - 1);
-}
-
-cv::Point TopLeft(const cv::Rect& rect)
-{
-    return cv::Point(rect.x, rect.y);
-}
-
-cv::Point TopRight(const cv::Rect& rect)
-{
-    return cv::Point(rect.x + rect.width, rect.y);
-}
-
-cv::Point BottomLeft(const cv::Rect& rect)
-{
-    return cv::Point(rect.x, rect.y + rect.height);
-}
-
-cv::Point BottomRight(const cv::Rect& rect)
-{
-    return cv::Point(rect.x + rect.width, rect.y + rect.height);
-}
-
-
-cv::Point BottomRight(const cv::Mat& image)
-{
-    return cv::Point(image.cols - 1, image.rows - 1);
-}
-
-bool Inside(const cv::Rect& rect_inner, const cv::Rect& rect_outter)
-{
-    return rect_inner.x >= rect_outter.x
-        && rect_inner.y >= rect_outter.y
-        && rect_inner.x + rect_inner.width
-           <= rect_outter.x + rect_outter.width
-        && rect_inner.y + rect_inner.height
-           <= rect_outter.y + rect_outter.height;
-}
-
-bool Inside(const cv::Rect& rect_inner, const cv::Mat& image)
-{
-    return Inside(rect_inner, WholeArea(image));
-}
-
-cv::Rect OverlapArea(const cv::Rect& rect1, const cv::Rect& rect2)
-{
-    int overlap_left   = std::max(rect1.x, rect2.x);
-    int overlap_top    = std::max(rect1.y, rect2.y);
-    int overlap_right  = std::min(rect1.x + rect1.width,  rect2.x + rect2.width );
-    int overlap_bottom = std::min(rect1.y + rect1.height, rect2.y + rect2.height);
-    if (overlap_top >= overlap_bottom || overlap_left >= overlap_right)
-        return cv::Rect(rect1.x, rect1.y, 0, 0);
-    else
-        return cv::Rect(
-            overlap_left,
-            overlap_top,
-            overlap_right - overlap_left,
-            overlap_bottom - overlap_top);
-}
-
-cv::Rect SubArea(const cv::Rect& rect1, const cv::Point& offset)
-{
-    return cv::Rect(TopLeft(rect1) - offset, rect1.size());
-}
-
-cv::Rect SubArea(const cv::Rect& rect1, const cv::Rect& rect2)
-{
-    return SubArea(rect1, TopLeft(rect2));
-}
-
-inline int DotProduct(const cv::Vec3i& vec1, const cv::Vec3i& vec2)
-{
-    return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
-}
-
-inline int DotProduct(const cv::Vec3i& vec)
-{
-    return DotProduct(vec, vec);
-}
-
-inline int ModulusOf(const cv::Vec3i& vec)
-{
-    return (int)sqrt(DotProduct(vec, vec));
-}
 
 cv::Rect TryCutPortrait(
     cv::Mat& image,
@@ -435,72 +329,7 @@ cv::Mat GetFrontBackMask(
     return result;
 }
 
-//GetMixRaw函数内使用的组件
-namespace {
-
-inline bool IsFront(uint8_t val)
-{
-    return val == cv::GC_FGD || val == cv::GC_PR_FGD;
-}
-
-inline bool IsBack(uint8_t val)
-{
-    return val == cv::GC_BGD || val == cv::GC_PR_BGD;
-}
-
-template<class T>
-inline T Squeue(T a)
-{
-    return a * a;
-}
-
-template<class Tval, class Tcnt = int>
-class Mean
-{
-public:
-    Mean() : _sum(), _count(0) { }
-    Mean(const Tval& zero) : _sum(zero), _count(0) { }
-
-    void Count(const Tval& val)
-    {
-        _sum += val;
-        _count++;
-    }
-
-    Tval Get() const
-    {
-        if (_count == 0)
-            return _sum;
-        else
-            return _sum / _count;
-    }
-
-    Tcnt Count() const
-    {
-        return _count;
-    }
-
-    Tval Sum() const
-    {
-        return _sum;
-    }
-private:
-    Tval _sum;
-    Tcnt _count;
-}; //template<class T> class Mean
-
-template<class T>
-uint8_t TruncByte(T val)
-{
-    return (uint8_t)std::max<T>(0, std::min<T>(255, val));
-}
-
-cv::Vec3b TruncVec(const cv::Vec3i& val)
-{
-    return cv::Vec3b(TruncByte(val[0]),
-                     TruncByte(val[1]),
-                     TruncByte(val[2]));
-}
+namespace { //GetMixRaw函数内使用的组件
 
 template<class T>
 void CheckedFloodFill(cv::Mat& image,
@@ -536,82 +365,6 @@ void Clear(cv::Mat& mask)
             if (t == 0 && m == cv::GC_PR_BGD) //孤立背景
                 m = cv::GC_PR_FGD;
         }
-}
-
-int CalcBorderRaw(
-    cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
-{
-    sybie_assert(   raw.size() == image.size()
-                 && image.size() == mask.size())
-        << SHOW(raw.size())
-        << SHOW(image.size())
-        << SHOW(mask.size());
-
-    //计算前景和背景平均值
-    Mean<cv::Vec3i> mean[2];
-    mean[0] = mean[1] = Mean<cv::Vec3i>(cv::Vec3i(0,0,0));
-    for (int r = 0 ; r < image.rows ; r++)
-        for (int c = 0 ; c < image.cols ; c++)
-        {
-            //在循环内避免使用条件判断（避免CPU分支预测错误）以提高性能
-            mean[IsFront(mask.at<uint8_t>(r,c))]
-                .Count((cv::Vec3i)image.at<cv::Vec3b>(r,c));
-        }
-    cv::Vec3i mean_val[2];
-    for (int i = 0 ; i < 2 ; i++)
-        mean_val[i] = mean[i].Get();
-    const cv::Vec3i mean_back = mean_val[0],
-                    mean_front = mean_val[1];
-    cv::Vec3i diff = mean_front - mean_back;
-    int abs_diff = DotProduct(diff);
-    if (abs_diff == 0)
-        abs_diff = 1;
-
-    //计算前景和背景方差
-    int sum_squeue_diff[2] = {1, 1};
-    for (int r = 0 ; r < image.rows ; r++)
-        for (int c = 0 ; c < image.cols ; c++)
-        {
-            int is_front = IsFront(mask.at<uint8_t>(r,c));
-            sum_squeue_diff[is_front] +=
-                DotProduct((cv::Vec3i)image.at<cv::Vec3b>(r,c) - mean_val[is_front]);
-        }
-
-    std::unique_ptr<int[]> rgr_map(new int[image.rows * image.cols]);
-    std::vector<int> rgr_vec[2];
-    for (auto& v : rgr_vec)
-        v.reserve(image.rows * image.cols);
-    for (int r = 0 ; r < image.rows ; r++)
-        for (int c = 0 ; c < image.cols ; c++)
-        {
-            int rgr_val = DotProduct(
-                diff, (cv::Vec3i)image.at<cv::Vec3b>(r,c) - mean_back);
-            rgr_map[r * image.cols + c] = rgr_val;
-            rgr_vec[IsFront(mask.at<uint8_t>(r,c))]
-                .push_back(rgr_val);
-        }
-    for (auto& v : rgr_vec)
-        std::sort(v.begin(), v.end());
-    int rgr_back = rgr_vec[0][rgr_vec[0].size() / 4],
-        rgr_front = rgr_vec[1][rgr_vec[1].size() / 2];
-    int rgr_diff = rgr_front - rgr_back;
-    if (rgr_diff == 0)
-        rgr_diff = 1;
-
-    cv::Vec3i back_int = diff * ((double)rgr_back / abs_diff) + mean_back;
-    cv::Vec3b back_byte = TruncVec(back_int);
-    for (int r = 0 ; r < image.rows ; r++)
-        for (int c = 0 ; c < image.cols ; c++)
-        {
-            cv::Vec4b& raw_pixel = raw.at<cv::Vec4b>(r,c);
-            int rgr_val = rgr_map[r * image.cols + c];
-            int alpha = 255 * (rgr_val - rgr_back) / rgr_diff;
-            raw_pixel[3] = TruncByte(alpha);
-            *(cv::Vec3b*)&raw_pixel = back_byte;
-            //*(cv::Vec3b*)&raw_pixel = mean_back;
-        }
-
-    return sum_squeue_diff[0] * sum_squeue_diff[1];
 }
 
 } //namespace GetMixRaw内使用的组件
@@ -718,9 +471,9 @@ cv::Mat GetMixRaw(
                                   r - BorderSize,
                                   BorderSize * 2 + 1,
                                   BorderSize * 2 + 1);
-                int dist_cur = CalcBorderRaw(tmp_raw,
-                                             image(sub_area),
-                                             mask(sub_area));
+                int dist_cur = MatBorder(tmp_raw,
+                                         image(sub_area),
+                                         mask(sub_area));
                 for (int rr = -BorderSize ; rr <= BorderSize ; rr++)
                     for (int cc = -BorderSize ; cc <= BorderSize ; cc++)
                     {

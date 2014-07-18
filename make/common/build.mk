@@ -96,7 +96,8 @@ ifneq ($(MAKECMDGOALS),clean)
 .PHONY : all run
 
 all : $(BIN_DIR)/$(BIN)
-	@:
+	@find . -name "*.lis" | xargs $(RM)
+	@find . -name "tp??????" | xargs $(RM)
 
 run : all
 	@$(BIN_DIR)/$(BIN)
@@ -134,8 +135,6 @@ ifdef print
 else
 	@mkdir -p $(@D)
 	$(BUILD_CMD)
-	@find . -name "*.lis" | xargs $(RM)
-	@find . -name "tp??????" | xargs $(RM)
 endif
 
 $(TMP_DIR)/src/%.o : $(SRC_DIR)/%

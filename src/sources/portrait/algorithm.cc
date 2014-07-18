@@ -12,8 +12,7 @@
 namespace portrait {
 
 const int
-    BorderSize = 5,
-    MixSize = BorderSize * 2 + 1;
+    BorderSize = 7;
 
 const int GrabCutInteration = 3;
 //GrabCut的图片大小
@@ -165,170 +164,6 @@ static void DrawMask(
                   front_color, thickness);
 }
 
-cv::Mat GetFrontBackMask(
-    const cv::Mat& image,
-    const cv::Rect& face_area,
-    const cv::Mat& stroke)
-{
-    sybie::common::StatingTestTimer timer("GetFrontBackMask");
-    sybie_assert(Inside(face_area, image))
-        << SHOW(face_area)
-        << SHOW(image.rows)
-        << SHOW(image.cols);
-
-    //初始化前景/背景掩码
-    cv::Mat mask(image.rows, image.cols, CV_8UC1);
-    DrawMask(mask, face_area, true, cv::GC_PR_FGD,
-             cv::GC_FGD, cv::GC_PR_BGD, cv::GC_BGD, CV_FILLED);
-
-    //自定义的关键点
-    if (stroke.data != nullptr)
-    {
-        for (int r = 0 ; r < stroke.rows ; r++)
-            for (int c = 0 ; c < stroke.cols ; c++)
-            {
-                uint8_t stroke_point = stroke.at<uint8_t>(r,c);
-                if ( stroke_point == cv::GC_FGD ||
-                     stroke_point == cv::GC_BGD)
-                    mask.at<uint8_t>(r,c) = stroke_point;
-            }
-    }
-
-    //使用cv::grabCut分离前景和背景
-    {
-        sybie::common::StatingTestTimer timer("GetFrontBackMask.grabCut");
-
-        cv::Size full_size(image.cols,
-                           image.rows); //缩略图尺寸
-        cv::Size grab_size(image.cols * GrabCutWidthScale,
-                           image.rows * GrabCutHeightScale); //GrabCut缩略图尺寸
-        cv::Size init_size(image.cols * GrabCutInitWidthScale,
-                           image.rows * GrabCutInitHeightScale); //GrabCut初始化尺寸
-
-        cv::Mat bgModel,fgModel; //前景模型、背景模型
-
-        //初始化模型
-        cv::Mat image_init, mask_init;
-        cv::resize(image, image_init, init_size, 0, 0, cv::INTER_AREA);
-        cv::resize(mask, mask_init, init_size, 0, 0, cv::INTER_NEAREST);
-        cv::grabCut(image_init, mask_init, cv::Rect(),
-                    bgModel,fgModel,
-                    0, cv::GC_INIT_WITH_MASK);
-
-        //抠图
-        cv::Mat image_grab, mask_grab;
-        cv::resize(image, image_grab, grab_size, 0, 0, cv::INTER_AREA);
-        cv::resize(mask, mask_grab, grab_size, 0, 0, cv::INTER_NEAREST);
-        cv::grabCut(image_grab, mask_grab, cv::Rect(),
-                    bgModel,fgModel,
-                    GrabCutInteration, cv::GC_EVAL);
-
-        //抠图结果恢复到最大尺寸
-        cv::resize(mask_grab, mask,
-                   full_size, 0, 0,
-                   cv::INTER_NEAREST);
-    }
-
-    //找出边缘像素
-    cv::Mat mask_border(image.rows, image.cols, CV_8UC1);
-    {
-        sybie::common::StatingTestTimer timer("GetFrontBackMask.FindBorder");
-        for (int r = 0 ; r < image.rows ; r++)
-            for (int c = 0 ; c < image.cols ; c++)
-            {
-                uint8_t& mb = mask_border.at<uint8_t>(r,c);
-                bool has_front = false;
-                bool has_back = false;
-                for (int rr = std::max(r-BorderSize,0) ;
-                         rr <= std::min(r+BorderSize,image.rows-1) ;
-                         rr++)
-                    for (int cc = std::max(c-BorderSize,0) ;
-                             cc <= std::min(c+BorderSize,image.cols-1) ;
-                             cc++)
-                    {
-                        uint8_t& m = mask.at<uint8_t>(rr,cc);
-                        if (m == cv::GC_BGD || m == cv::GC_PR_BGD)
-                            has_back = true;
-                        else
-                            has_front = true;
-                    }
-                if (has_front && has_back)
-                    mb = 128;
-                else if (has_front)
-                    mb = 255;
-                else
-                    mb = 0;
-            }
-    }
-
-    //计算边缘的混合比例
-
-    cv::Mat result(image.rows, image.cols, CV_8UC4);
-    {
-        sybie::common::StatingTestTimer timer("GetFrontBackMask.CalcAlpha");
-        for (int r = 0 ; r < image.rows ; r++)
-            for (int c = 0 ; c < image.cols ; c++)
-            {
-                uint8_t& mb = mask_border.at<uint8_t>(r,c);
-
-                cv::Vec4b& p = result.at<cv::Vec4b>(r,c);
-                uint8_t& alpha = p[3];
-                cv::Vec3b& backc = *(cv::Vec3b*)(void*)&p;
-
-                alpha = mb; //默认混合
-                backc = image.at<cv::Vec3b>(r,c); //默认背色
-
-                if (mb == 128) //边缘像素，计算混合比例
-                {
-                    int cnt_back = 0, cnt_front = 0;
-                    cv::Vec3i sum_back(0,0,0), sum_front(0,0,0);
-
-                    for (int rr = std::max(r-MixSize,0) ;
-                             rr <= std::min(r+MixSize,image.rows-1) ;
-                             rr++)
-                        for (int cc = std::max(c-MixSize,0) ;
-                                 cc <= std::min(c+MixSize,image.cols-1) ;
-                                 cc++)
-                        {
-                            uint8_t& mbrange = mask_border.at<uint8_t>(rr,cc);
-                            const cv::Vec3b& pixel = image.at<cv::Vec3b>(rr,cc);
-                            if (mbrange == 0)
-                                sum_back += pixel, cnt_back++;
-                            if (mbrange == 255)
-                                sum_front += pixel, cnt_front++;
-                        }
-
-                    if (cnt_back > 0 && cnt_front > 0)
-                    {
-                        cv::Vec3i cur = (cv::Vec3i)image.at<cv::Vec3b>(r,c);
-
-                        cv::Vec3i adv_back = sum_back / cnt_back,
-                                  adv_front = sum_front / cnt_front;
-                        cv::Vec3i diff_cur_back = cur - adv_back,
-                                  diff_front_back = adv_front - adv_back;
-                        int alpha_int = 255 * DotProduct(diff_cur_back, diff_front_back) /
-                                        std::max(1, DotProduct(diff_front_back, diff_front_back));
-                        alpha = std::max(0, std::min(255, alpha_int));
-
-                        /*int dist_back = cnt_front * ModulusOf(sum_back - cur * cnt_back);
-                        int dist_front = cnt_back * ModulusOf(sum_front - cur * cnt_front);
-                        if (dist_front + dist_back > 0)
-                            alpha = 255 * dist_back / (dist_front + dist_back);*/
-                    }
-                    else if (cnt_back > 0 || cnt_front > 0)
-                    {
-                        alpha = 255 * cnt_front / (cnt_back + cnt_front);
-                    }
-
-                    if (cnt_back > 0)
-                        backc = sum_back / cnt_back;
-                }
-            }
-    }
-
-    return result;
-}
-
 namespace { //GetMixRaw函数内使用的组件
 
 template<class T>
@@ -452,7 +287,7 @@ cv::Mat GetMixRaw(
                     IsFront(mask.at<uint8_t>(r,c)) ? 0xff : 0;
                 raw.at<cv::Vec4b>(r,c) = cv::Vec4b(
                     pixel[0], pixel[1], pixel[2], pixel_alpha);
-                dist_map[r * image.cols + c] = 0x7fffffff;
+                dist_map[r * image.cols + c] = std::numeric_limits<int>::max();
             }
         for (int r = BorderSize ; r < image.rows - BorderSize ; r++)
             for (int c = BorderSize ; c < image.cols - BorderSize ; c++)

@@ -37,11 +37,6 @@ cv::Rect ResizeFace(
  * 第四通道为Alpha，表示前景的混合比例。
  * 对于Alpha为255的点（全前景），前3通道无意义。
  */
-cv::Mat GetFrontBackMask(
-    const cv::Mat& image,
-    const cv::Rect& face_area,
-    const cv::Mat& stroke);
-//改进中的算法
 cv::Mat GetMixRaw(
     const cv::Mat& image,
     const cv::Rect& face_area,

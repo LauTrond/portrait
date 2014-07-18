@@ -33,8 +33,11 @@
 
 ####以下是包含本文件前的可选参数####
 
-  #使用DEBUG编译（应该在make命令传入：make debug=1，或用export debug=1）
+  #使用DEBUG编译（make debug=1）
   #debug            ?=
+  
+  #不执行任何编译命令，而是显示所有需要更新的文件（make print=1）
+  #print            ?=
 
   #编译输出类型，可以为EXEC（执行文件）、STATIC（静态链接库）
   BUILD_TYPE        ?=
@@ -90,9 +93,10 @@ ifneq ($(MAKECMDGOALS),clean)
 #定义默认终极目标$(BIN_DIR)/$(BIN)
 #链接时分为静态库和运行文件两种，带.a的文件名为静态链接库
 
-.PHONY : run all
+.PHONY : all run
 
 all : $(BIN_DIR)/$(BIN)
+	@:
 
 run : all
 	@$(BIN_DIR)/$(BIN)
@@ -125,26 +129,38 @@ COMPILE_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 DEPEND_CMD  = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MM -MT "$(TMP_DIR)/$*.o" -o $@ $<
 
 $(BIN_DIR)/$(BIN) : $(ALL_O) $(EXT_LNK_OBJS)
+ifdef print
+	@echo $@
+else
 	@mkdir -p $(@D)
 	$(BUILD_CMD)
 	@find . -name "*.lis" | xargs $(RM)
 	@find . -name "tp??????" | xargs $(RM)
+endif
 
 $(TMP_DIR)/src/%.o : $(SRC_DIR)/%
+ifdef print
+	@echo $@
+else
 	@mkdir -p $(@D)
 	$(COMPILE_CMD)
+endif
 
 $(TMP_DIR)/src/%.d : $(SRC_DIR)/%
 	@mkdir -p $(@D)
-	$(DEPEND_CMD)
+	@$(DEPEND_CMD)
 
 $(TMP_DIR)/gen/%.o : $(GEN_DIR)/%
+ifdef print
+	@echo $@
+else
 	@mkdir -p $(@D)
 	$(COMPILE_CMD)
+endif
 
 $(TMP_DIR)/gen/%.d : $(GEN_DIR)/%
 	@mkdir -p $(@D)
-	$(DEPEND_CMD)
+	@$(DEPEND_CMD)
 
 # 导入所有o文件对源代码的依赖关系
 sinclude $(ALL_D)

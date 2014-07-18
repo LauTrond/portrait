@@ -5,7 +5,6 @@ SRC_FILES:= \
     portrait/exception.cc \
     portrait/facedetect.cc \
     portrait/graphics.cc \
-    portrait/haarcascade.cc \
     portrait/matting.cc \
     portrait/processing.cc \
     snappy/snappy.cc \

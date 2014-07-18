@@ -13,7 +13,11 @@ namespace portrait {
 //在边缘处理时用到的前景分类数，越大越准确、越慢。
 enum {KFront = 4};
 
+//球体映射的球体半径，足够大即可
 enum {SphereRadius = 0xfff};
+
+//边缘大小
+enum {BorderSize = 1};
 
 template<class T, int n>
 cv::Vec<T,n> Normalize(const cv::Vec<T,n>& vec, T modulus)
@@ -48,6 +52,13 @@ private:
     Mean<cv::Vec3i> _mean;
 }; //template<class T> class Mean
 
+enum MatMask
+{
+    MatMask_Back = 0,
+    MatMask_Front = 1,
+    MatMask_Border = 2
+};
+
 int MatBorder(
     cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
 {
@@ -58,6 +69,23 @@ int MatBorder(
         << SHOW(mask.size());
     const int rows = image.rows, cols = image.cols;
 
+    sybie::common::Graphics::MatBase<MatMask> mask_map(
+        sybie::common::Graphics::Size(cols, rows));
+    for (int r = 0 ; r < rows ; r++)
+        for (int c = 0 ; c < cols ; c++)
+            mask_map.at(c,r) = (MatMask)IsFront(mask.at<uint8_t>(r,c));
+    for (int r = BorderSize ; r < rows - BorderSize ; r++)
+        for (int c = BorderSize ; c < cols - BorderSize ; c++)
+        {
+            bool cur = IsFront(mask.at<uint8_t>(r,c));
+            for (int rr = -BorderSize ; rr <= BorderSize ; rr++)
+                for (int cc = -BorderSize ; cc <= BorderSize ; cc++)
+                {
+                    if (cur != IsFront(mask.at<uint8_t>(r+rr,c+cc)))
+                        mask_map.at(c+cc,r+rr) = MatMask_Border; //边缘
+                }
+        }
+
     //使用中位数计算标准背景色
     std::vector<uint8_t> back_vec[3];
     for (auto& v : back_vec)
@@ -65,7 +93,7 @@ int MatBorder(
     for (int r = 0 ; r < rows ; r++)
         for (int c = 0 ; c < cols ; c++)
         {
-            if(IsFront(mask.at<uint8_t>(r,c)))
+            if(mask_map.at(c,r) != MatMask_Back)
                 continue;
             const cv::Vec3b& pixel = image.at<cv::Vec3b>(r,c);
             for (int cn = 0 ; cn < 3 ; cn++)
@@ -79,10 +107,7 @@ int MatBorder(
                              back_vec[2][back_index]);
     cv::Vec3b back_color = TruncIntVec(back_color_int);
 
-    //Debug:
-    //std::cout<<back_color<<std::endl;
-
-    //以平均背景色为圆心，将前景像素颜色映射到一个球面上，执行k-means聚类。
+    //以平均背景色为球心，将像素颜色映射到一个球面上，并对前景像素执行k-means聚类。
     sybie::common::Graphics::MatBase<cv::Vec3i> sphere_map(
         sybie::common::Graphics::Size(cols, rows));
     std::vector<cv::Vec3i> samples;
@@ -98,25 +123,12 @@ int MatBorder(
                                      - back_color_int,
                                   SphereRadius);
             sphere_map.at(c,r) = sphere_vec;
-            if (IsFront(mask.at<uint8_t>(r,c)))
+            if (mask_map.at(c,r) == MatMask_Front)
                 samples.push_back(sphere_vec);
         }
-    for (int k = 0 ; k < KFront ; k++) //随便初始化kmeans中心
+    for (int k = 0 ; k < KFront ; k++) //随便初始化kmeans聚类中心
         kmeans.InitCenter(k, cv::Vec3i(k,0,0));
-    kmeans.Train(samples.begin(), samples.end());
-
-    //Debug:
-    /*
-    for (int r = 0 ; r < rows ; r++)
-    {
-        for (int c = 0 ; c < cols ; c++)
-            std::cout << sphere_map.at(c,r) << " ";
-        std::cout<<std::endl;
-    }
-    for (int k = 0 ; k < KFront ; k++)
-        std::cout<<kmeans.GetCenter(k)<<" ";
-    std::cout<<std::endl;
-    */
+    kmeans.Train(samples.cbegin(), samples.cend());
 
     //用kmeans结果对每个像素分类
     sybie::common::Graphics::MatBase<int> tag_map(
@@ -125,22 +137,12 @@ int MatBorder(
         for (int c = 0 ; c < cols ; c++)
             tag_map.at(c,r) = kmeans.GetTag(sphere_map.at(c,r));
 
-    //Debug:
-    /*
-    for (int r = 0 ; r < rows ; r++)
-    {
-        for (int c = 0 ; c < cols ; c++)
-            std::cout << tag_map.at(c,r) << " ";
-        std::cout<<std::endl;
-    }
-    */
-
     //计算分类内前景平均值（相对典型背景色）
     Mean<cv::Vec3i> mean_diff[KFront];
     for (int r = 0 ; r < rows ; r++)
         for (int c = 0 ; c < cols ; c++)
         {
-            if (IsFront(mask.at<uint8_t>(r,c)))
+            if (mask_map.at(c,r) == MatMask_Front)
                 mean_diff[tag_map.at(c,r)].Push(
                     (cv::Vec3i)image.at<cv::Vec3b>(r,c) - back_color_int);
         }
@@ -149,16 +151,9 @@ int MatBorder(
     for (int k = 0 ; k < KFront ; k++)
     {
         mean_diff_val[k] = mean_diff[k].Count() > 0 ?
-            mean_diff[k].Get() : kmeans.GetCenter(k);
+            mean_diff[k].Get() : Normalize(kmeans.GetCenter(k),10);
         mean_diff_squeue[k] = std::max(100, SqueueVec(mean_diff_val[k]));
     }
-
-    //Debug:
-    /*
-    for (int k = 0 ; k < KFront ; k++)
-        std::cout<<mean_diff_val[k];
-    std::cout<<std::endl;
-    */
 
     //计算alpha
     for (int r = 0 ; r < rows ; r++)

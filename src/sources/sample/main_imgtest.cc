@@ -67,7 +67,10 @@ int _main(int argc, char** argv)
         {
             int key = cv::waitKey(0);
             if (key == 27)
+            {
+                sybie::common::StatingTestTimer::ShowAll(std::cout);
                 return 0;
+            }
             if (key == ',')
             {
                 index--;

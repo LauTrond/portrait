@@ -8,6 +8,8 @@
 
 namespace portrait {
 
+namespace {
+
 cv::CascadeClassifier& InitFaceCascadeClassifier()
 {
     static cv::CascadeClassifier face_cascade;
@@ -29,6 +31,8 @@ cv::CascadeClassifier& GetFaceCascadeClassifier()
         InitFaceCascadeClassifier(); //首次调用时初始化
     return face_cascade;
 }
+
+}  //namespace
 
 void InitFaceDetect()
 {

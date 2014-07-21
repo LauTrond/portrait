@@ -10,6 +10,7 @@
 #include <iterator>
 
 #include "opencv2/opencv.hpp"
+#include "sybie/common/RichAssert.hh"
 
 namespace portrait {
 
@@ -103,29 +104,29 @@ struct Zero<cv::Vec<TElement,n>>
 };
 
 //统计集合数学期望
-template<class Tval, class TOrigin = Zero<Tval>, class Tcnt = int>
+template<class Tval, class TOrigin = Zero<Tval>>
 class Mean
 {
 public:
-    Mean() : _sum(TOrigin()()), _count(0) { }
+    Mean() : _sum(TOrigin()()), _sum_weight(0) { }
 
-    void Push(const Tval& val)
+    inline void Push(const Tval& val, float weight = 1)
     {
         _sum += val;
-        _count++;
+        _sum_weight += weight;
     }
 
     Tval Get() const
     {
-        if (_count == 0)
+        if (_sum_weight == 0)
             return TOrigin()();
         else
-            return _sum / _count;
+            return Tval(_sum / _sum_weight);
     }
 
-    Tcnt Count() const
+    float Count() const
     {
-        return _count;
+        return _sum_weight;
     }
 
     Tval Sum() const
@@ -134,7 +135,7 @@ public:
     }
 private:
     Tval _sum;
-    Tcnt _count;
+    float _sum_weight;
 }; //template<class T> class Mean
 
 template<class TVal,
@@ -208,11 +209,21 @@ public:
                 tag = i;
             }
         }
-        assert(tag >= 0);
+        sybie_assert(tag >= 0)<<SHOW(val);
         return tag;
     }
 
-    TVal GetCenter(int tag) const
+    inline double DistanceOf(const TVal& val, int tag) const
+    {
+        return TDist()(_center[tag], val);
+    }
+
+    inline int Count(int tag) const
+    {
+        return _cnt[tag];
+    }
+
+    inline TVal GetCenter(int tag) const
     {
         return _center[tag];
     }

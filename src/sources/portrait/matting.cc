@@ -17,7 +17,7 @@ enum {KFront = 4};
 enum {SphereRadius = 0xfff};
 
 //边缘大小
-enum {BorderSize = 1};
+enum {BorderSize = 2};
 
 template<class T, int n>
 cv::Vec<T,n> Normalize(const cv::Vec<T,n>& vec, T modulus)
@@ -148,17 +148,20 @@ int MatBorder(
         }
     cv::Vec3i mean_diff_val[KFront];
     int mean_diff_squeue[KFront];
+    Mean<int> all_diff_squeue;
     for (int k = 0 ; k < KFront ; k++)
     {
         mean_diff_val[k] = mean_diff[k].Count() > 0 ?
-            mean_diff[k].Get() : Normalize(kmeans.GetCenter(k),10);
-        mean_diff_squeue[k] = std::max(100, SqueueVec(mean_diff_val[k]));
+            mean_diff[k].Get() : Normalize(kmeans.GetCenter(k),100);
+        mean_diff_squeue[k] = std::max(25, SqueueVec(mean_diff_val[k]));
+        all_diff_squeue.Push(mean_diff_squeue[k], kmeans.Count(k));
     }
 
     //计算alpha
     for (int r = 0 ; r < rows ; r++)
         for (int c = 0 ; c < cols ; c++)
         {
+            const cv::Vec3b& pixel = image.at<cv::Vec3b>(r,c);
             cv::Vec4b& raw_pixel = raw.at<cv::Vec4b>(r,c);
 
             //Alpha
@@ -171,10 +174,13 @@ int MatBorder(
             raw_pixel[3] = TruncByte(alpha);
 
             //背景色
-            *(cv::Vec3b*)&raw_pixel = back_color;
+            *(cv::Vec3b*)&raw_pixel =
+                TruncIntVec((back_color_int * alpha +
+                            (cv::Vec3i)pixel * (255 - alpha))
+                            / 255);
         }
 
-    return -back_index;
+    return -all_diff_squeue.Get();
 }
 
 

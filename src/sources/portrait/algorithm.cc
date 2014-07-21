@@ -12,7 +12,7 @@
 namespace portrait {
 
 const int
-    BorderSize = 7;
+    BorderSize = 5;
 
 const int GrabCutInteration = 3;
 //GrabCut的图片大小
@@ -37,7 +37,7 @@ const double
     PR_BGBottom = 0.10;
 //绝对前景－脸
 const double
-    FGFaceTop = 0.05,
+    FGFaceTop = 0.00,
     FGFaceSide = -0.25,
     FGFaceBottom = -0.30;
 //绝对前景-颈
@@ -274,7 +274,7 @@ cv::Mat GetMixRaw(
 
     cv::Mat raw(image.rows, image.cols, CV_8UC4);
     {
-        sybie::common::StatingTestTimer timer("GetMixRaw.FindBorder");
+        sybie::common::StatingTestTimer timer("GetMixRaw.Matting");
 
         cv::Mat tmp_raw(BorderSize * 2 + 1, BorderSize * 2 + 1, CV_8UC4);
         std::unique_ptr<int[]> dist_map(new int[image.rows * image.cols]);
@@ -289,6 +289,7 @@ cv::Mat GetMixRaw(
                     pixel[0], pixel[1], pixel[2], pixel_alpha);
                 dist_map[r * image.cols + c] = std::numeric_limits<int>::max();
             }
+
         for (int r = BorderSize ; r < image.rows - BorderSize ; r++)
             for (int c = BorderSize ; c < image.cols - BorderSize ; c++)
             {

@@ -120,8 +120,10 @@ private:
 //class PoolItemStream
 
 PoolItemStream::PoolItemStream(Pool& pool, const char* data_id)
-    : std::istream(new PoolItemBuffer(pool, data_id))
-{ }
+    : std::istream(nullptr)
+{
+    rdbuf(new PoolItemBuffer(pool, data_id));
+}
 
 PoolItemStream::~PoolItemStream() throw()
 {

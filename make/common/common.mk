@@ -27,8 +27,8 @@ endif
 
 CXXFLAGS     += `pkg-config --cflags opencv` -I$(PORTRAIT_DIR)/include
 LIBS         += `pkg-config --libs opencv`
-EXT_LNK_OBJS += $(PORTRAIT_LIB_DIR)/$(PORTRAIT_LIBA) \
-                $(PORTRAIT_LIB_DIR)/$(PORTRAIT_CASSCADE)
+EXT_LNK_OBJS += $(PORTRAIT_LIB_DIR)/$(PORTRAIT_CASSCADE) \
+                $(PORTRAIT_LIB_DIR)/$(PORTRAIT_LIBA)
 
 ifneq ($(MAKECMDGOALS),clean)
 

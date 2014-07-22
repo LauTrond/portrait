@@ -1,6 +1,7 @@
 #include "sybie/datain/Stream.hh"
 
 #include <cstdint>
+#include <cstring>
 #include <cassert>
 #include <stdexcept>
 #include <vector>

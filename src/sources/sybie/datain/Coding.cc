@@ -4,6 +4,7 @@
 #include "sybie/datain/Coding.hh"
 
 #include <cstdint>
+#include <cstring>
 #include <utility>
 #include <memory>
 #include <iostream>

@@ -13,7 +13,6 @@
 #include <functional> ///std::ref c++11
 
 #include "sybie/common/Streaming.hh"
-#include "sybie/common/ManagedRes.hh"
 
 #include "snappy.h"
 

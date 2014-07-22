@@ -8,7 +8,6 @@ SRC_FILES:= \
   sybie/datain/Pool.cc \
   sybie/common/Arguments.cc \
   sybie/common/Event.cc \
-  sybie/common/ManagedRes.cc \
   sybie/common/Streaming.cc \
   sybie/common/Text.cc \
   sybie/common/Time.cc \

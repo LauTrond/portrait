@@ -16,8 +16,11 @@ enum {KFront = 4};
 //球体映射的球体半径，足够大即可
 enum {SphereRadius = 0xfff};
 
+//Matting前景色和背景色最小距离（欧氏距离），太小易被噪声干扰，太大则精确度下降
+enum {MinFrontBackDiff = 5};
+
 //边缘大小
-enum {BorderSize = 2};
+enum {BorderSize = 1};
 
 template<class T, int n>
 cv::Vec<T,n> Normalize(const cv::Vec<T,n>& vec, T modulus)
@@ -105,7 +108,7 @@ int MatBorder(
     cv::Vec3i back_color_int(back_vec[0][back_index],
                              back_vec[1][back_index],
                              back_vec[2][back_index]);
-    cv::Vec3b back_color = TruncIntVec(back_color_int);
+    //cv::Vec3b back_color = TruncIntVec(back_color_int);
 
     //以平均背景色为球心，将像素颜色映射到一个球面上，并对前景像素执行k-means聚类。
     sybie::common::Graphics::MatBase<cv::Vec3i> sphere_map(
@@ -153,7 +156,8 @@ int MatBorder(
     {
         mean_diff_val[k] = mean_diff[k].Count() > 0 ?
             mean_diff[k].Get() : Normalize(kmeans.GetCenter(k),100);
-        mean_diff_squeue[k] = std::max(25, SqueueVec(mean_diff_val[k]));
+        mean_diff_squeue[k] = std::max(Squeue<int>(MinFrontBackDiff),
+                                       SqueueVec(mean_diff_val[k]));
         all_diff_squeue.Push(mean_diff_squeue[k], kmeans.Count(k));
     }
 

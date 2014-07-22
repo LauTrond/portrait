@@ -12,8 +12,6 @@
 
 #include "sybie/common/Uncopyable.hh" //common::Uncopyable
 #include "sybie/common/Streaming.hh" //common::PipeStream common::PipeBuffer
-#include "sybie/common/ManagedRes.hh" //common::TemporaryFile
-//#include "sybie/common/Log.hh" //(debug) LOG_TRACE_POINT
 
 #include "snappy.h" //snappy::Uncompress
 
@@ -112,19 +110,6 @@ std::string LoadOnData(const char* data_txt)
     common::ByteArrayStream src_stream(
         const_cast<char*>(data_txt), strlen(data_txt));
     return LoadOnStream(src_stream);
-}
-
-common::TemporaryFile GetTemp(const std::string& data_id)
-{
-    const std::string data = Load(data_id);
-    common::TemporaryFile tmp_file;
-    std::ofstream ofs(tmp_file.GetFilename());
-    if (!ofs)
-        throw std::runtime_error("GetTemp: Cannot open tempory file.");
-    ofs.write(data.data(), data.size());
-    if (!ofs)
-        throw std::runtime_error("GetTemp: Cannot write tempory file.");
-    return tmp_file;
 }
 
 } //namespace datain

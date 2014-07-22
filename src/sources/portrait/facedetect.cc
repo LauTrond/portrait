@@ -1,6 +1,5 @@
 #include "portrait/facedetect.hh"
 
-#include "sybie/common/ManagedRes.hh" //sybie::common::TemporaryFile
 #include "sybie/common/RichAssert.hh" //sybie_assert
 #include "sybie/datain/datain.hh" //sybie::datain::GetTemp
 
@@ -10,16 +9,33 @@ namespace portrait {
 
 namespace {
 
+/* 这个类通过继承cv::CascadeClassifier，允许从FileNode加载旧式分类器。
+ *
+ * 解释：
+ * （1）cv::CascadeClassifier支持加载OpenCV 1.x（旧）或OpenCV 2.x（新）的分类器。
+ * （2）新分类器可以通过文件或内存方式（cv::FileNode）加载，
+ *     但由于未知动机，OpenCV 1.x分类器只能通过文件加载。
+ * （3）OpenCV只集成OpenCV 1.x分类器，而本项目为了方便跨平台开发，
+ *     把分类器数据嵌入到代码中。
+ */
+class MyCascadeClassifier : public cv::CascadeClassifier
+{
+public:
+    MyCascadeClassifier(const cv::FileNode &node)
+    {
+        oldCascade = cv::Ptr<CvHaarClassifierCascade>(
+            (CvHaarClassifierCascade*)node.readObj());
+    }
+}; //class MyCascadeClassifier
+
 cv::CascadeClassifier& InitFaceCascadeClassifier()
 {
-    static cv::CascadeClassifier face_cascade;
-    sybie::common::TemporaryFile CascadeFile =
-        sybie::datain::GetTemp("haarcascade_frontalface_alt.xml");
-    bool succ = face_cascade.load(CascadeFile.GetFilename());
-    if (!succ)
+    std::string data = sybie::datain::Load("haarcascade_frontalface_alt.xml");
+    cv::FileStorage fs(data, cv::FileStorage::MEMORY | cv::FileStorage::READ);
+    static MyCascadeClassifier face_cascade(fs.getFirstTopLevelNode());
+    if (face_cascade.empty())
     {
-        throw std::runtime_error((std::string)"Failed load cascade file: "
-                                 + CascadeFile.GetFilename());
+        throw std::runtime_error("Failed load cascade.");
     }
 
     return face_cascade;

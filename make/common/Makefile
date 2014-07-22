@@ -12,7 +12,6 @@ SRC_FILES:= \
     snappy/snappy-stubs-internal.cc \
     sybie/common/Arguments.cc \
     sybie/common/Event.cc \
-    sybie/common/ManagedRes.cc \
     sybie/common/Streaming.cc \
     sybie/common/Text.cc \
     sybie/common/Time.cc \
@@ -27,5 +26,7 @@ CXXFLAGS += \
     -I../../include \
     `pkg-config --cflags opencv`
 LIBS += `pkg-config --libs opencv`
+
+all : obj/release/src/portrait/haarcascade.cc.o
 
 include build.mk

@@ -176,8 +176,6 @@
     <ClInclude Include="..\..\src\headers\sybie\common\Arguments_fwd.hh" />
     <ClInclude Include="..\..\src\headers\sybie\common\Event.hh" />
     <ClInclude Include="..\..\src\headers\sybie\common\Event_fwd.hh" />
-    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes.hh" />
-    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes_fwd.hh" />
     <ClInclude Include="..\..\src\headers\sybie\common\Math.hh" />
     <ClInclude Include="..\..\src\headers\sybie\common\RichAssert.hh" />
     <ClInclude Include="..\..\src\headers\sybie\common\Streaming.hh" />
@@ -207,7 +205,6 @@
     <ClCompile Include="..\..\src\sources\snappy\snappy.cc" />
     <ClCompile Include="..\..\src\sources\sybie\common\Arguments.cc" />
     <ClCompile Include="..\..\src\sources\sybie\common\Event.cc" />
-    <ClCompile Include="..\..\src\sources\sybie\common\ManagedRes.cc" />
     <ClCompile Include="..\..\src\sources\sybie\common\Streaming.cc" />
     <ClCompile Include="..\..\src\sources\sybie\common\Text.cc" />
     <ClCompile Include="..\..\src\sources\sybie\common\Time.cc" />

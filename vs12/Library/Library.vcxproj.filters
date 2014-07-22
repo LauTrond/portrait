@@ -87,12 +87,6 @@
     <ClInclude Include="..\..\src\headers\sybie\common\Event_fwd.hh">
       <Filter>src\headers\sybie\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes.hh">
-      <Filter>src\headers\sybie\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\headers\sybie\common\ManagedRes_fwd.hh">
-      <Filter>src\headers\sybie\common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\headers\sybie\common\Math.hh">
       <Filter>src\headers\sybie\common</Filter>
     </ClInclude>
@@ -172,9 +166,6 @@
       <Filter>src\sources\sybie\common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\sources\sybie\common\Event.cc">
-      <Filter>src\sources\sybie\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sources\sybie\common\ManagedRes.cc">
       <Filter>src\sources\sybie\common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\sources\sybie\common\Streaming.cc">

@@ -148,10 +148,45 @@ public:
         : _k(k), _center(new TVal[k]), _cnt(new int[k])
     { }
 
+    KMeans(const KMeans& another)
+        : _k(another.k),
+          _center(new TVal[another.k]),
+          _cnt(new int[another.k])
+    {
+        for (int i = 0 ; i < _k ; i++)
+        {
+            _center[i] = another._center[i];
+            _cnt[i] = another._cnt[i];
+        }
+    }
+
+    KMeans(KMeans&& another) throw()
+        : _k(0),
+          _center(nullptr),
+          _cnt(nullptr)
+    {
+        Swap(another);
+    }
+
     ~KMeans()
     {
         delete[] _center;
         delete[] _cnt;
+    }
+
+    KMeans& operator=(const KMeans& another) = delete;
+
+    KMeans& operator=(KMeans&& another)
+    {
+        Swap(another);
+        return *this;
+    }
+
+    void Swap(KMeans& another)
+    {
+        std::swap(_k, another._k);
+        std::swap(_center, another._center);
+        std::swap(_cnt, another._cnt);
     }
 
     void InitCenter(int tag, const TVal& val)

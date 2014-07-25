@@ -429,6 +429,11 @@ public:
         return Get(y);
     }
 
+    inline T& operator[](const Point& p)
+    {
+        return *Get(p);
+    }
+
     inline T& at(int x, int y)
     {
         return at(Point(x, y));
@@ -474,6 +479,11 @@ public:
         return Get(y);
     }
 
+    inline const T& operator[](const Point& p) const
+    {
+        return *Get(p);
+    }
+
     inline const T& at(int x, int y) const
     {
         return at(Point(x, y));
@@ -494,6 +504,12 @@ public:
         return _data + _size.Total();
     }
 
+    //单元所在位置（获取指针并减去）
+    inline Point Where(const T& element) const
+    {
+        return _PointOf(&element);
+    }
+
     inline Rect WholeArea() const
     {
         return Rect(Point(0,0), _size);
@@ -511,6 +527,15 @@ private:
         assert(point.x < _size.width);
         assert(point.y < _size.height);
         return point.y * _size.width + point.x;
+    }
+
+    inline Point _PointOf(const T* ptr) const
+    {
+        assert(ptr && _data);
+        std::ptrdiff_t offset = ptr - _data;
+        assert(offset >= 0 && offset < _size.Total());
+        int y = offset / _size.width;
+        return Point(offset - y * _size.width, y);
     }
 }; //template<class T> struct MatBase
 
@@ -535,6 +560,148 @@ template<class T>
 T OverlapTotal(const RectBase<T>& rect1, const RectBase<T>& rect2)
 {
     return OverlapArea(rect1, rect2).size.Total();
+}
+
+template<class IntType>
+struct ColumnPriorIncreaserBase
+{
+    inline void operator()(const RectBase<IntType>& area,
+                           PointBase<IntType>& point)
+    {
+        point.x++;
+        if (point.x >= area.Right())
+        {
+            point.x = area.Left();
+            point.y++;
+        }
+    }
+
+    inline PointBase<IntType> FirstOf(const RectBase<IntType>& area)
+    {
+        return area.point;
+    }
+
+    inline PointBase<IntType> LastOf(const RectBase<IntType>& area)
+    {
+        return PointBase<IntType>(area.Left(), area.Bottom());
+    }
+
+}; //struct ColumnPrior
+
+template<class IntType>
+struct RowPriorIncreaserBase
+{
+    inline void operator()(const RectBase<IntType>& area,
+                           PointBase<IntType>& point)
+    {
+        point.y++;
+        if (point.y >= area.Bottom())
+        {
+            point.y = area.Top();
+            point.x++;
+        }
+    }
+
+    inline PointBase<IntType> FirstOf(const RectBase<IntType>& area)
+    {
+        return area.point;
+    }
+
+    inline PointBase<IntType> LastOf(const RectBase<IntType>& area)
+    {
+        return PointBase<IntType>(area.Right(), area.Top());
+    }
+}; //struct RowPrior
+
+template<class IntType, class Increaser>
+struct RectInteratorBase
+{
+public:
+    explicit RectInteratorBase(const RectBase<IntType>& rect)
+        : _rect(rect), _point(Increaser().FirstOf(rect))
+    { }
+
+    RectInteratorBase(const RectBase<IntType>& rect,
+                      const PointBase<IntType>& point)
+        : _rect(rect), _point(point)
+    { }
+
+    inline RectInteratorBase& operator++()
+    {
+        Increaser()(_rect, _point);
+        return *this;
+    }
+
+    inline RectInteratorBase operator++(int)
+    {
+        RectInteratorBase<IntType, Increaser> result(*this);
+        operator++();
+        return result;
+    }
+
+    bool operator==(const RectInteratorBase& another) const
+    {
+        return _point == another._point;
+    }
+
+    bool operator!=(const RectInteratorBase& another) const
+    {
+        return _point != another._point;
+    }
+
+    inline const PointBase<IntType>& operator*() const
+    {
+        return _point;
+    }
+private:
+    const RectBase<IntType> _rect;
+    PointBase<IntType> _point;
+}; //struct RectInteratorBase
+
+template<class IntType, class Increaser>
+class PointsInRectBase
+{
+public:
+    explicit PointsInRectBase(const RectBase<IntType>& rect)
+        : _rect(rect)
+    { }
+
+    inline RectInteratorBase<IntType, Increaser>
+    begin() const
+    {
+        return RectInteratorBase<IntType, Increaser>(
+            _rect, Increaser().FirstOf(_rect));
+    }
+
+    inline RectInteratorBase<IntType, Increaser>
+    end() const
+    {
+        return RectInteratorBase<IntType, Increaser>(
+            _rect, Increaser().LastOf(_rect));
+    }
+private:
+    const RectBase<IntType> _rect;
+};
+
+template<class IntType>
+PointsInRectBase<IntType, ColumnPriorIncreaserBase<IntType> >
+PointsIn(const RectBase<IntType>& area)
+{
+    return PointsInRectBase<IntType, ColumnPriorIncreaserBase<IntType> >(area);
+}
+
+template<class IntType>
+PointsInRectBase<IntType, ColumnPriorIncreaserBase<IntType> >
+PointsIn(const SizeBase<IntType>& size)
+{
+    return PointsIn(RectBase<IntType>(PointBase<IntType>(0,0), size));
+}
+
+template<class MatType>
+PointsInRectBase<int, ColumnPriorIncreaserBase<int> >
+PointsIn(const MatBase<MatType>& mat)
+{
+    return PointsIn(mat.WholeArea());
 }
 
 }  //Graphics

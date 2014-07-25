@@ -275,7 +275,8 @@ cv::Mat GetMixRaw(
     cv::Mat raw(image.rows, image.cols, CV_8UC4);
     {
         sybie::common::StatingTestTimer timer("GetMixRaw.Matting");
-
+        _MatBorder(raw, image, mask);
+        /*
         cv::Mat tmp_raw(BorderSize * 2 + 1, BorderSize * 2 + 1, CV_8UC4);
         std::unique_ptr<int[]> dist_map(new int[image.rows * image.cols]);
 
@@ -322,6 +323,7 @@ cv::Mat GetMixRaw(
                         }
                     }
             }
+        */
     }
 
     return raw;

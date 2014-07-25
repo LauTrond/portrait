@@ -39,6 +39,11 @@ typedef MatBase<uint8_t> GrayBitmap;
 typedef MatBase<Argb8888> ArgbBitmap;
 typedef MatBase<Ayuv8888> AyuvBitmap;
 
+template<class IntType> struct ColumnPriorIncreaserBase;
+template<class IntType> struct RowPriorIncreaserBase;
+template<class IntType, class Increaser> struct RectInteratorBase;
+template<class IntType, class Increaser> class PointsInRectBase;
+
 }  //namespace Graphics
 }  //namespace common
 }  //namespace sybie

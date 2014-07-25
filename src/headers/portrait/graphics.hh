@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "opencv2/opencv.hpp"
+#include "sybie/common/Graphics/Structs.hh"
 
 namespace portrait {
 

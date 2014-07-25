@@ -18,34 +18,29 @@ namespace {
  * （3）OpenCV只集成OpenCV 1.x分类器，而本项目为了方便跨平台开发，
  *     把分类器数据嵌入到代码中。
  */
-class MyCascadeClassifier : public cv::CascadeClassifier
+class OldCascadeClassifier : public cv::CascadeClassifier
 {
 public:
-    MyCascadeClassifier(const cv::FileNode &node)
+    OldCascadeClassifier(const cv::FileNode &node)
     {
         oldCascade = cv::Ptr<CvHaarClassifierCascade>(
             (CvHaarClassifierCascade*)node.readObj());
     }
 }; //class MyCascadeClassifier
 
-cv::CascadeClassifier& InitFaceCascadeClassifier()
+cv::FileStorage GetFaceCascadeClassifierStorage()
 {
     std::string data = sybie::datain::Load("haarcascade_frontalface_alt.xml");
-    cv::FileStorage fs(data, cv::FileStorage::MEMORY | cv::FileStorage::READ);
-    static MyCascadeClassifier face_cascade(fs.getFirstTopLevelNode());
-    if (face_cascade.empty())
-    {
-        throw std::runtime_error("Failed load cascade.");
-    }
-
-    return face_cascade;
+    return cv::FileStorage(data, cv::FileStorage::MEMORY | cv::FileStorage::READ);
 }
 
 cv::CascadeClassifier& GetFaceCascadeClassifier()
 {
-    static cv::CascadeClassifier& face_cascade =
-        InitFaceCascadeClassifier(); //首次调用时初始化
-    return face_cascade;
+    static OldCascadeClassifier face_cascade(
+        GetFaceCascadeClassifierStorage().getFirstTopLevelNode()); //首次调用时初始化
+    if (face_cascade.empty())
+        throw std::runtime_error("Failed load cascade.");
+    return static_cast<cv::CascadeClassifier&>(face_cascade);
 }
 
 }  //namespace

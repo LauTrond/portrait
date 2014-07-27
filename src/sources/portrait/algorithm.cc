@@ -275,55 +275,7 @@ cv::Mat GetMixRaw(
     cv::Mat raw(image.rows, image.cols, CV_8UC4);
     {
         sybie::common::StatingTestTimer timer("GetMixRaw.Matting");
-        _MatBorder(raw, image, mask);
-        /*
-        cv::Mat tmp_raw(BorderSize * 2 + 1, BorderSize * 2 + 1, CV_8UC4);
-        std::unique_ptr<int[]> dist_map(new int[image.rows * image.cols]);
-
-        for (int r = 0 ; r < image.rows ; r++)
-            for (int c = 0 ; c < image.cols ; c++)
-            {
-                const cv::Vec3b& pixel = image.at<cv::Vec3b>(r,c);
-                const uint8_t pixel_alpha =
-                    IsFront(mask.at<uint8_t>(r,c)) ? 0xff : 0;
-                raw.at<cv::Vec4b>(r,c) = cv::Vec4b(
-                    pixel[0], pixel[1], pixel[2], pixel_alpha);
-                dist_map[r * image.cols + c] = std::numeric_limits<int>::max();
-            }
-
-        for (int r = BorderSize ; r < image.rows - BorderSize ; r++)
-            for (int c = BorderSize ; c < image.cols - BorderSize ; c++)
-            {
-                if (IsBack(mask.at<uint8_t>(r,c)))
-                    continue;
-
-                if (   IsFront(mask.at<uint8_t>(r - 1,c))
-                    && IsFront(mask.at<uint8_t>(r + 1,c))
-                    && IsFront(mask.at<uint8_t>(r,c - 1))
-                    && IsFront(mask.at<uint8_t>(r,c + 1)))
-                    continue;
-
-                //边缘像素，计算边缘混合比例
-                cv::Rect sub_area(c - BorderSize,
-                                  r - BorderSize,
-                                  BorderSize * 2 + 1,
-                                  BorderSize * 2 + 1);
-                int dist_cur = MatBorder(tmp_raw,
-                                         image(sub_area),
-                                         mask(sub_area));
-                for (int rr = -BorderSize ; rr <= BorderSize ; rr++)
-                    for (int cc = -BorderSize ; cc <= BorderSize ; cc++)
-                    {
-                        int& dist_old = dist_map[(r + rr) * image.cols + (c + cc)];
-                        if (dist_old > dist_cur)
-                        {
-                            dist_old = dist_cur;
-                            raw.at<cv::Vec4b>(r + rr, c + cc) =
-                                tmp_raw.at<cv::Vec4b>(BorderSize + rr, BorderSize + cc);
-                        }
-                    }
-            }
-        */
+        MatBorder(raw, image, mask);
     }
 
     return raw;

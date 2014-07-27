@@ -20,7 +20,7 @@ namespace portrait {
  * mask：cv::grabCut结果的前景／背景掩码
  * 返回一个用于评估准确率的值，应接纳最小的结果
  */
-void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask);
+void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask);
 
 }  //namespace portrait
 

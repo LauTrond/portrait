@@ -3,6 +3,8 @@
 #include "portrait/matting.hh"
 
 #include <functional>
+#include <map>
+#include <unordered_map>
 
 #include "sybie/common/Graphics/Structs.hh"
 #include "sybie/common/Graphics/CVCast.hh"
@@ -14,28 +16,34 @@
 
 namespace portrait {
 
+//本模块内所有图形运算不使用OpenCV，而使用这个库，以简化编程
 using namespace sybie::common::Graphics;
 
 namespace {
 
-enum { FrontSamplingDistance = 7 };
+//前景色采样中心与边缘距离
+enum { FrontSamplingDistance = 4 };
+//背景色采样中心与边缘距离
 enum { BackSamplingDistance = 30 };
-enum { FrontSamplingRange = 5 };
+//前景色采样半径
+enum { FrontSamplingRange = 3 };
+//背景色采样半径
 enum { BackSamplingRange = 3 };
+//混合范围，边缘向内（前景方向）的距离
 enum { FrontMattingRange = 10 };
+//混合范围，边缘向外（背景方向）的距离
 enum { BackMattingRange = 30 };
-
-//在边缘处理时用到的前景分类数，越大越准确、越慢。
+//前景色分类数，越大越准确、越慢。
 enum {KFront = 4};
-
 //球体映射的球体半径，足够大即可
 enum {SphereRadius = 0xfff};
-
 //Matting前景色和背景色最小距离（欧氏距离），太小易被噪声干扰，太大则精确度下降
 enum {MinFrontBackDiff = 5};
 
-//边缘大小
-//enum {BorderSize = 1};
+const Size FrontSamplingSize(FrontSamplingRange * 2 + 1,
+                             FrontSamplingRange * 2 + 1);
+const Size BackSamplingSize(BackSamplingRange * 2 + 1,
+                            BackSamplingRange * 2 + 1);
 
 template<class T, int n>
 cv::Vec<T,n> Normalize(const cv::Vec<T,n>& vec, T modulus)
@@ -91,25 +99,31 @@ std::vector<Point> _GetBorderPoints(
     return border_points;
 }
 
-struct ExpendingPoint
+struct ExpandingPoint
 {
-    ExpendingPoint(const Point& point,
+    ExpandingPoint(const Point& point,
                    const Point& source)
-        : point(point), source(source)
-    { }
+        : point(point), source(source), distance()
+    {
+        Point diff = point - source;
+        distance = Squeue(diff.x) + Squeue(diff.y);
+    }
 
     Point point;
     Point source;
+    int distance;
 };
 
-std::pair<int, ExpendingPoint>
-ExpendingPair(const Point& point,
+/*
+std::pair<int, ExpandingPoint>
+ExpandingPair(const Point& point,
               const Point& source)
 {
     Point diff = point - source;
     int dist = Squeue(diff.x) + Squeue(diff.y);
-    return std::make_pair(dist, ExpendingPoint(point, source));
+    return std::make_pair(dist, ExpandingPoint(point, source));
 }
+*/
 
 struct ComparePoints
 {
@@ -120,6 +134,76 @@ struct ComparePoints
     }
 };
 
+struct HashPoint
+{
+    size_t operator()(const Point& point) const
+    {
+        static std::hash<int> hash;
+        return hash(point.y * (1<<16) + point.x);
+    }
+};
+
+class ExpandingSet
+{
+public:
+    void Update(const Point& point, const Point& src)
+    {
+        ExpandingPoint point_to_expand(point, src);
+
+        auto found = _expanding_index.find(point);
+        if (found != _expanding_index.end())
+        {   //如果更新点在扩展点集中
+            ExpandingBlock& block = *(found->second.first);
+            ExpandingPoint& block_point = *(found->second.second);
+            if(point_to_expand.distance < block_point.distance)
+            {   //新距离较小，需要更新
+                block.erase(found->second.second);
+                _expanding_index.erase(found);
+            }
+            else
+            {   //不需要更新
+                return;
+            }
+        }
+
+        int block_index = (int)(sqrt(point_to_expand.distance) * 3);
+        ExpandingBlock& block = _expanding_map[block_index];
+        block.push_front(point_to_expand);
+        _expanding_index.insert(std::make_pair(point,
+            std::make_pair(&block, block.begin())));
+    }
+
+    ExpandingPoint PopFirst()
+    {
+        ExpandingMap::iterator block_it;
+        for (block_it = _expanding_map.begin();
+             block_it->second.empty();
+             block_it++)
+        { }
+        _expanding_map.erase(_expanding_map.begin(), block_it);
+
+        ExpandingBlock& first_block = block_it->second;
+        ExpandingPoint result = first_block.back();
+        first_block.pop_back();
+        _expanding_index.erase(result.point);
+        return result;
+    }
+
+    bool Empty() const
+    {
+        return _expanding_index.empty();
+    }
+private:
+    typedef std::list<ExpandingPoint> ExpandingBlock;
+    typedef std::map<int, ExpandingBlock> ExpandingMap;
+
+    ExpandingMap _expanding_map;
+    std::unordered_map<Point,
+                       std::pair<ExpandingBlock*,ExpandingBlock::iterator>,
+                       HashPoint> _expanding_index;
+};
+
+
 /* 在一个以size指定的空间内，计算所有像素点离点集points的最近距离。
  * 返回一个矩阵，每个单元包含距离平方（(x1-x2)^2+(y1-y2)^2）和最近点
  * range指定最大距离，超过这个距离的点不再计算，并返回-1
@@ -128,82 +212,57 @@ struct ComparePoints
 template<class PointsCollection>
 MatBase<std::pair<int, Point> > _GetDistMap(
     const Size& size, const PointsCollection& points,
-    int range = std::numeric_limits<int>::max())
+    int range = std::numeric_limits<int>::max(),
+    const MatBase<uint8_t>& mask = MatBase<uint8_t>())
 {
     //结果网格
     MatBase<std::pair<int, Point> > dist_map(size);
     dist_map.Set(std::make_pair(-1, Point(-1,-1)));
 
     //扩展点集
-    std::multimap<int, ExpendingPoint> expanding;
-    std::map<Point,
-             std::multimap<int, ExpendingPoint>::iterator,
-             ComparePoints> expanding_index;
+    ExpandingSet expanding;
 
     //初始化，将目标点集加入到扩展点集
     for (auto& point : points)
     {
         assert(point.x >= 0 && point.x < size.width &&
                point.y >= 0 && point.y < size.height);
-
-        auto it = expanding.insert(ExpendingPair(point, point));
-        expanding_index.insert(std::make_pair(point, it));
+        expanding.Update(point, point);
     }
 
-    while (!expanding.empty())
+    while (!expanding.Empty())
     {
-        //获得扩展点集中距离最小的点
-        auto it = expanding.begin();
-        const int expanding_dist = it->first;
-        const Point expanding_point = it->second.point;
-        const Point expanding_source = it->second.source;
-        //从集合中删除这个点
-        expanding_index.erase(expanding_point);
-        expanding.erase(it);
+        ExpandingPoint expanding_point = expanding.PopFirst();
+
         //将这个点的最小距离和最近点更新到结果
-        int dist_result = (int)sqrt(expanding_dist);
-        dist_map[expanding_point] =
-            std::make_pair(dist_result, expanding_source);
+        int dist_result = (int)sqrt(expanding_point.distance);
+        dist_map[expanding_point.point] =
+            std::make_pair(dist_result, expanding_point.source);
         if (dist_result >= range)
             continue;
 
-        //内部函数：更新一个点
-        auto _Update = [&](const Point& updating_point){
-            if (dist_map[updating_point].first < 0)
-            {
-                auto expend_pair = ExpendingPair(updating_point,
-                                                 expanding_source);
-                bool update = true;
-
-                auto found_in_expanding = expanding_index.find(updating_point);
-                if (found_in_expanding != expanding_index.end())
-                {   //如果更新点在扩展点集中
-                    if(found_in_expanding->second->first > expend_pair.first)
-                    {   //新距离较小，需要更新
-                        expanding.erase(found_in_expanding->second);
-                        expanding_index.erase(found_in_expanding);
-                    }
-                    else
-                    {   //不需要更新
-                        update = false;
-                    }
-                }
-
-                if (update)
-                {
-                    auto it = expanding.insert(expend_pair);
-                    expanding_index.insert(std::make_pair(updating_point, it));
-                }
-            }
-        };
-
+        /*
         //更新范围：扩展点expanding_point为中心的3*3范围
-        Rect update_area(expanding_point + Point(-1,-1), Size(3,3));
+        Rect update_area(expanding_point.point + Point(-1,-1), Size(3,3));
         //边缘防止越界
         update_area = OverlapArea(update_area, dist_map.WholeArea());
         //遍历更新范围
         for (auto& point : PointsIn(update_area))
-            _Update(point);
+        {
+            if (dist_map[point].first < 0)
+                expanding.Update(point, expanding_point.source);
+        }
+        */
+        auto _Update = [&](int offx, int offy){
+            Point point = expanding_point.point + Point(offx, offy);
+            if (dist_map[point].first < 0 &&
+                (!mask.IsValid() || mask[point] > 0))
+                expanding.Update(point, expanding_point.source);
+        };
+        if (expanding_point.point.x > 0) _Update(-1,0);
+        if (expanding_point.point.x < size.width - 1) _Update(1,0);
+        if (expanding_point.point.y > 0) _Update(0,-1);
+        if (expanding_point.point.y < size.height - 1) _Update(0,1);
     }
 
     return dist_map;
@@ -243,8 +302,7 @@ void _StatBackSample(BackSample& sample,
     Rect sampling_area(
         sample.center - Point(BackSamplingRange,
                               BackSamplingRange),
-        Size(BackSamplingRange * 2 + 1,
-             BackSamplingRange * 2 + 1));
+        BackSamplingSize);
     sampling_area = OverlapArea(sampling_area, img.WholeArea());
 
     std::vector<uint8_t> back_vec[3];
@@ -289,8 +347,7 @@ void _StatFrontSample(FrontSample& front_sample,
     Rect sampling_area(front_sample.center -
                        Point(FrontSamplingRange,
                              FrontSamplingRange),
-                       Size(FrontSamplingRange * 2 + 1,
-                            FrontSamplingRange * 2 + 1));
+                       FrontSamplingSize);
     sampling_area = OverlapArea(sampling_area, img.WholeArea());
     MatBase<cv::Vec3i> sphere_map(sampling_area.size);
     std::vector<cv::Vec3i> pixels_diff_vec;
@@ -301,7 +358,9 @@ void _StatFrontSample(FrontSample& front_sample,
             Normalize<int, 3>((cv::Vec3i)img[point] - back_color,
                               SphereRadius);
         sphere_map[point_sub] = sphere_vec;
-        pixels_diff_vec.push_back(sphere_vec);
+        if (Squeue(point_sub.x) + Squeue(point_sub.y)
+                <= Squeue<int>(FrontSamplingRange))
+            pixels_diff_vec.push_back(sphere_vec);
     }
     for (int k = 0 ; k < KFront ; k++) //随便初始化kmeans聚类中心
         front_sample.kmeans.InitCenter(k, cv::Vec3i(k,0,0));
@@ -312,10 +371,16 @@ void _StatFrontSample(FrontSample& front_sample,
     for (auto& point : PointsIn(sampling_area))
     {
         const Point point_sub = point - sampling_area.point;
-        //前景分类
-        int tag = front_sample.kmeans.GetTag(sphere_map[point_sub]);
-        meaning[tag].Push((cv::Vec3i)img[point] - back_color);
+        if (Squeue(point_sub.x) + Squeue(point_sub.y)
+                <= Squeue<int>(FrontSamplingRange))
+        {
+            //前景分类
+            int tag = front_sample.kmeans.GetTag(sphere_map[point_sub]);
+            meaning[tag].Push((cv::Vec3i)img[point] - back_color);
+        }
     }
+
+    //将结果保存到sample
     for (int k = 0 ; k < KFront ; k++)
     {
         front_sample.mean_color[k] = meaning[k].Count() > 0 ?
@@ -326,9 +391,18 @@ void _StatFrontSample(FrontSample& front_sample,
     }
 }
 
+template<class T>
+bool Found(const MatBase<T>& mat, const Rect& area, const T& val)
+{
+    for (auto& point : PointsIn(OverlapArea(area,mat.WholeArea())))
+        if (mat[point] == val)
+            return true;
+    return false;
+}
+
 }  //namespace
 
-void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
+void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
 {
 /* 1）找出所有边缘像素
  * 2）计算图像上每一点与最近边缘像素的距离（一维距离）
@@ -370,7 +444,7 @@ void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
             int& distance = border_dist_map[point].first;
             if (distance == -1)
                 distance = std::numeric_limits<int>::max();
-            else if (IsFront(_mask[point]))
+            if (IsFront(_mask[point]))
                 distance = -distance;
         }
     }
@@ -380,18 +454,39 @@ void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
                        back_sampling_points;
     std::map<Point,FrontSample,ComparePoints> front_samples;
     std::map<Point,BackSample,ComparePoints> back_samples;
+    MatBase<uint8_t> border_mask(_size);
     MatBase<std::pair<int, Point> > front_dist_map;
-    //MatBase<std::pair<int, Point> > back_dist_map;
+    MatBase<std::pair<int, Point> > back_dist_map;
 
     {
         sybie::common::StatingTestTimer timer("_MatBorder:3");
+        MatBase<uint8_t> sampling_mask(_size);
         for (auto& point : PointsIn(_size))
         {
+            uint8_t& sampling_mask_point = sampling_mask[point];
             int dist = border_dist_map[point].first;
-            if (dist == -FrontSamplingDistance)
+            if (dist == -FrontSamplingDistance &&
+                !Found<uint8_t>(sampling_mask,
+                    Rect::FromCenterSize(point, FrontSamplingSize), 1))
+            {
                 front_sampling_points.push_back(point);
-            if (dist == BackSamplingDistance)
+                sampling_mask_point = 1;
+            }
+            else if (dist == BackSamplingDistance &&
+                     !Found<uint8_t>(sampling_mask,
+                         Rect::FromCenterSize(point, BackSamplingSize), 2))
+            {
                 back_sampling_points.push_back(point);
+                sampling_mask_point = 2;
+            }
+            else
+            {
+                sampling_mask_point = 0;
+            }
+            border_mask[point] = (dist <= BackSamplingDistance+1 &&
+                                  dist <= BackMattingRange+1 &&
+                                  dist >= -FrontSamplingDistance-1 &&
+                                  dist >= -FrontMattingRange-1);
         }
 
         for (auto& point : front_sampling_points)
@@ -402,12 +497,12 @@ void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
 
         front_dist_map = _GetDistMap(
             _size, front_sampling_points,
-            FrontSamplingDistance + BackMattingRange + 2);
-        /*
+            std::numeric_limits<int>::max(),
+            border_mask);
         back_dist_map = _GetDistMap(
             _size, back_sampling_points,
-            FrontSamplingDistance + BackSamplingRange + 2);
-        */
+            std::numeric_limits<int>::max(),
+            border_mask);
     }
 
     //4)
@@ -422,8 +517,13 @@ void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
         sybie::common::StatingTestTimer timer("_MatBorder:5");
         for (auto& front_sample_pair : front_samples)
         {
-            Point nearest_back_point = GetNearestPoint(
-                front_sample_pair.first, back_sampling_points);
+            Point nearest_back_point =
+                back_dist_map[front_sample_pair.first].second;
+            if (nearest_back_point.x == -1)
+            {
+                nearest_back_point = GetNearestPoint(
+                    front_sample_pair.first, back_sampling_points);
+            }
             const BackSample* nearest_back_sample =
                 &back_samples.at(nearest_back_point);
             _StatFrontSample(front_sample_pair.second,
@@ -478,141 +578,5 @@ void _MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
         }
     } //timer
 }
-
-/*
-
-enum MatMask
-{
-    MatMask_Back = 0,
-    MatMask_Front = 1,
-    MatMask_Border = 2
-};
-
-int MatBorder(
-    cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
-{
-    sybie_assert(   raw.size() == image.size()
-                 && image.size() == mask.size())
-        << SHOW(raw.size())
-        << SHOW(image.size())
-        << SHOW(mask.size());
-    const int rows = image.rows, cols = image.cols;
-
-    sybie::common::Graphics::MatBase<MatMask> mask_map(
-        sybie::common::Graphics::Size(cols, rows));
-    for (int r = 0 ; r < rows ; r++)
-        for (int c = 0 ; c < cols ; c++)
-            mask_map.at(c,r) = (MatMask)IsFront(mask.at<uint8_t>(r,c));
-    for (int r = BorderSize ; r < rows - BorderSize ; r++)
-        for (int c = BorderSize ; c < cols - BorderSize ; c++)
-        {
-            bool cur = IsFront(mask.at<uint8_t>(r,c));
-            for (int rr = -BorderSize ; rr <= BorderSize ; rr++)
-                for (int cc = -BorderSize ; cc <= BorderSize ; cc++)
-                {
-                    if (cur != IsFront(mask.at<uint8_t>(r+rr,c+cc)))
-                        mask_map.at(c+cc,r+rr) = MatMask_Border; //边缘
-                }
-        }
-
-    //使用中位数计算标准背景色
-    std::vector<uint8_t> back_vec[3];
-    for (auto& v : back_vec)
-        v.reserve(rows * cols);
-    for (int r = 0 ; r < rows ; r++)
-        for (int c = 0 ; c < cols ; c++)
-        {
-            if(mask_map.at(c,r) != MatMask_Back)
-                continue;
-            const cv::Vec3b& pixel = image.at<cv::Vec3b>(r,c);
-            for (int cn = 0 ; cn < 3 ; cn++)
-                back_vec[cn].push_back(pixel[cn]);
-        }
-    for (auto& v : back_vec)
-        std::sort(v.begin(), v.end());
-    int back_index = back_vec[0].size() / 2;
-    cv::Vec3i back_color_int(back_vec[0][back_index],
-                             back_vec[1][back_index],
-                             back_vec[2][back_index]);
-    //cv::Vec3b back_color = TruncIntVec(back_color_int);
-
-    //以平均背景色为球心，将像素颜色映射到一个球面上，并对前景像素执行k-means聚类。
-    sybie::common::Graphics::MatBase<cv::Vec3i> sphere_map(
-        sybie::common::Graphics::Size(cols, rows));
-    std::vector<cv::Vec3i> samples;
-    samples.reserve(rows * cols);
-    KMeans<cv::Vec3i,
-           DistanceOfVector<int, 3>,
-           MeanOnSphere<SphereRadius> > kmeans(KFront);
-    for (int r = 0 ; r < rows ; r++) //初始化分类样本
-        for (int c = 0 ; c < cols ; c++)
-        {
-            cv::Vec3i sphere_vec =
-                Normalize<int, 3>((cv::Vec3i)image.at<cv::Vec3b>(r,c)
-                                     - back_color_int,
-                                  SphereRadius);
-            sphere_map.at(c,r) = sphere_vec;
-            if (mask_map.at(c,r) == MatMask_Front)
-                samples.push_back(sphere_vec);
-        }
-    for (int k = 0 ; k < KFront ; k++) //随便初始化kmeans聚类中心
-        kmeans.InitCenter(k, cv::Vec3i(k,0,0));
-    kmeans.Train(samples.cbegin(), samples.cend());
-
-    //用kmeans结果对每个像素分类
-    sybie::common::Graphics::MatBase<int> tag_map(
-        sybie::common::Graphics::Size(cols, rows));
-    for (int r = 0 ; r < rows ; r++)
-        for (int c = 0 ; c < cols ; c++)
-            tag_map.at(c,r) = kmeans.GetTag(sphere_map.at(c,r));
-
-    //计算分类内前景平均值（相对典型背景色）
-    Mean<cv::Vec3i> mean_diff[KFront];
-    for (int r = 0 ; r < rows ; r++)
-        for (int c = 0 ; c < cols ; c++)
-        {
-            if (mask_map.at(c,r) == MatMask_Front)
-                mean_diff[tag_map.at(c,r)].Push(
-                    (cv::Vec3i)image.at<cv::Vec3b>(r,c) - back_color_int);
-        }
-    cv::Vec3i mean_diff_val[KFront];
-    int mean_diff_squeue[KFront];
-    Mean<int> all_diff_squeue;
-    for (int k = 0 ; k < KFront ; k++)
-    {
-        mean_diff_val[k] = mean_diff[k].Count() > 0 ?
-            mean_diff[k].Get() : Normalize(kmeans.GetCenter(k),100);
-        mean_diff_squeue[k] = std::max(Squeue<int>(MinFrontBackDiff),
-                                       SqueueVec(mean_diff_val[k]));
-        all_diff_squeue.Push(mean_diff_squeue[k], kmeans.Count(k));
-    }
-
-    //计算alpha
-    for (int r = 0 ; r < rows ; r++)
-        for (int c = 0 ; c < cols ; c++)
-        {
-            const cv::Vec3b& pixel = image.at<cv::Vec3b>(r,c);
-            cv::Vec4b& raw_pixel = raw.at<cv::Vec4b>(r,c);
-
-            //Alpha
-            int tag = tag_map.at(c,r);
-            int alpha = 255
-                * DotProduct(mean_diff_val[tag],
-                             (cv::Vec3i)image.at<cv::Vec3b>(r,c)
-                               - back_color_int)
-                / mean_diff_squeue[tag];
-            raw_pixel[3] = TruncByte(alpha);
-
-            //背景色
-            *(cv::Vec3b*)&raw_pixel =
-                TruncIntVec((back_color_int * alpha +
-                            (cv::Vec3i)pixel * (255 - alpha))
-                            / 255);
-        }
-
-    return -all_diff_squeue.Get();
-}
-
-*/
 
 } //namespace portrait

@@ -24,7 +24,7 @@ struct SemiDataImpl
 {
 public:
     cv::Mat image; //CV_8UC3 R,G,B
-    cv::Mat raw; //CV_8UC4 R,G,B,A
+    cv::Mat matte; //CV_8UC4 R,G,B,A
     cv::Rect face_area;
 public:
     static SemiData NewWrapper()
@@ -90,9 +90,9 @@ cv::Mat SemiData::GetImage() const
 
 cv::Mat SemiData::GetAlpha() const
 {
-    cv::Mat tmp(_data->raw.rows, _data->raw.cols, CV_8UC1);
+    cv::Mat tmp(_data->matte.rows, _data->matte.cols, CV_8UC1);
     int from_to[] = {3, 0};
-    cv::mixChannels(&_data->raw, 1, &tmp, 1, from_to, 1);
+    cv::mixChannels(&_data->matte, 1, &tmp, 1, from_to, 1);
     return tmp;
 }
 
@@ -119,7 +119,7 @@ SemiData PortraitProcessSemi(
         0.6, 0.6, 0.4); //经验参数：裁剪出超过所有已知证件照规格的尺寸
     data.face_area = ResizeFace(data.image, data.face_area,
                                 cv::Size(face_resize_to, face_resize_to));
-    data.raw = GetMixRaw(data.image, data.face_area, cv::Mat());
+    data.matte = GetAlphaMatte(data.image, data.face_area, cv::Mat());
 
     return semi;
 }
@@ -127,7 +127,7 @@ SemiData PortraitProcessSemi(
 void SetStroke(SemiData& semi, const cv::Mat& stroke)
 {
     SemiDataImpl& data = SemiDataImpl::GetFrom(semi);
-    data.raw = GetMixRaw(data.image, data.face_area, stroke);
+    data.matte = GetAlphaMatte(data.image, data.face_area, stroke);
 }
 
     static cv::Rect GetCropArea(const cv::Rect face_area,
@@ -171,7 +171,7 @@ cv::Mat PortraitMix(
 
     //替换背景
     cv::Mat result = Mix(data.image(crop_area_in_image),
-                         data.raw(crop_area_in_image),
+                         data.matte(crop_area_in_image),
                          back_color, mix_alpha);
 
     //如果上下左右空间不足，扩展边缘
@@ -189,7 +189,7 @@ cv::Mat PortraitMixFull(
     const double mix_alpha)
 {
     const SemiDataImpl& data = SemiDataImpl::GetFrom(semi);
-    return Mix(data.image, data.raw, back_color, mix_alpha);
+    return Mix(data.image, data.matte, back_color, mix_alpha);
 }
 
 }  //namespace Portrait

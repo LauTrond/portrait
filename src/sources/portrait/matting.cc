@@ -30,6 +30,10 @@ enum { FrontSamplingRange = 3 };
 //背景色采样半径
 enum { BackSamplingRange = 3 };
 //混合范围，边缘向内（前景方向）的距离
+enum { FrontSamplingStep = 2 };
+//混合范围，边缘向外（背景方向）的距离
+enum { BackSamplingStep = 5 };
+//混合范围，边缘向内（前景方向）的距离
 enum { FrontMattingRange = 10 };
 //混合范围，边缘向外（背景方向）的距离
 enum { BackMattingRange = 30 };
@@ -39,11 +43,17 @@ enum {KFront = 4};
 enum {SphereRadius = 0xfff};
 //Matting前景色和背景色最小距离（欧氏距离），太小易被噪声干扰，太大则精确度下降
 enum {MinFrontBackDiff = 5};
+//前景分类，每个分类的最小距离
+enum {MinSphereDiff = MinFrontBackDiff * SphereRadius / 255 / 2};
 
 const Size FrontSamplingSize(FrontSamplingRange * 2 + 1,
                              FrontSamplingRange * 2 + 1);
 const Size BackSamplingSize(BackSamplingRange * 2 + 1,
                             BackSamplingRange * 2 + 1);
+const Size FrontSamplingStepArea(FrontSamplingStep * 2 - 1,
+                                 FrontSamplingStep * 2 - 1);
+const Size BackSamplingStepArea(BackSamplingStep * 2 - 1,
+                                BackSamplingStep * 2 - 1);
 
 template<class T, int n>
 cv::Vec<T,n> Normalize(const cv::Vec<T,n>& vec, T modulus)
@@ -77,6 +87,16 @@ public:
 private:
     Mean<cv::Vec3i> _mean;
 }; //template<class T> class Mean
+
+
+template<class T, int n, int reduce>
+struct MattingDistance
+{
+    double operator()(const cv::Vec<T,n>& vec1, const cv::Vec<T,n>& vec2)
+    {
+        return std::max<double>(ModulusOf<T,n>(vec1 - vec2) - reduce, 1.0);
+    }
+};
 
 /* 在GrabCut结果的mask中获取边缘像素点集。
  * 边缘像素点是前景点，且上下左右四个像素至少有一个是背景点。
@@ -330,7 +350,7 @@ struct FrontSample
 
     Point center;
     const BackSample* back_sample;
-    KMeans<cv::Vec3i, DistanceOfVector<int, 3>,
+    KMeans<cv::Vec3i, MattingDistance<int, 3, MinSphereDiff>,
            MeanOnSphere<SphereRadius> > kmeans;
     cv::Vec3i mean_color[KFront];
     int mean_color_squeue[KFront];
@@ -402,7 +422,7 @@ bool Found(const MatBase<T>& mat, const Rect& area, const T& val)
 
 }  //namespace
 
-void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
+cv::Mat MatBorder(const cv::Mat& image, const cv::Mat& mask)
 {
 /* 1）找出所有边缘像素
  * 2）计算图像上每一点与最近边缘像素的距离（一维距离）
@@ -418,13 +438,14 @@ void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
  *    在f的采样分类中找到接近分类，分类的平均颜色为前景色，f的最近背景采样背景色作为alpha计算依据。
  */
 
-    MatBase<cv::Vec4b> _raw =
-        MakeWrapper<cv::Vec4b>(raw);
     const MatBase<cv::Vec3b> _img =
         MakeConstWrapper<cv::Vec3b>(image);
     const MatBase<uint8_t> _mask =
         MakeConstWrapper<uint8_t>(mask);
     const Size _size = _img.GetSize();
+    cv::Mat matte(image.rows, image.cols, CV_8UC4);
+    MatBase<cv::Vec4b> _matte =
+        MakeWrapper<cv::Vec4b>(matte);
 
     //1)
     std::vector<Point> border_points;
@@ -467,14 +488,14 @@ void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
             int dist = border_dist_map[point].first;
             if (dist == -FrontSamplingDistance &&
                 !Found<uint8_t>(sampling_mask,
-                    Rect::FromCenterSize(point, FrontSamplingSize), 1))
+                    Rect::FromCenterSize(point, FrontSamplingStepArea), 1))
             {
                 front_sampling_points.push_back(point);
                 sampling_mask_point = 1;
             }
             else if (dist == BackSamplingDistance &&
                      !Found<uint8_t>(sampling_mask,
-                         Rect::FromCenterSize(point, BackSamplingSize), 2))
+                         Rect::FromCenterSize(point, BackSamplingStepArea), 2))
             {
                 back_sampling_points.push_back(point);
                 sampling_mask_point = 2;
@@ -538,7 +559,7 @@ void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
         for (auto& point : PointsIn(_size))
         {
             const cv::Vec3i pixel = (cv::Vec3i)_img[point];
-            cv::Vec4b& raw_pixel = _raw[point];
+            cv::Vec4b& raw_pixel = _matte[point];
             uint8_t& alpha_pixel = raw_pixel[3];
             cv::Vec3b& back_pixel = *(cv::Vec3b*)&raw_pixel;
 
@@ -577,6 +598,45 @@ void MatBorder(cv::Mat& raw, const cv::Mat& image, const cv::Mat& mask)
             }
         }
     } //timer
+
+    return matte;
+}
+
+cv::Mat MakeTrimap(const cv::Mat& image, const cv::Mat& mask)
+{
+    const MatBase<cv::Vec3b> _img =
+        MakeConstWrapper<cv::Vec3b>(image);
+    const MatBase<uint8_t> _mask =
+        MakeConstWrapper<uint8_t>(mask);
+    const Size _size = _img.GetSize();
+    cv::Mat trimap(image.rows, image.cols, CV_8UC1);
+    MatBase<uint8_t> _trimap =
+        MakeWrapper<uint8_t>(trimap);
+
+    std::vector<Point> border_points = _GetBorderPoints(_mask);
+    MatBase<std::pair<int, Point> > border_dist_map =
+        _GetDistMap(_size, border_points,
+                    std::max<int>(FrontSamplingDistance, BackSamplingDistance) + 2);
+    for (auto& point : PointsIn(_size))
+    {
+        int& distance = border_dist_map[point].first;
+        if (IsFront(_mask[point]))
+        {
+            if (distance < FrontMattingRange && distance >=0 )
+                _trimap[point] = 127;
+            else
+                _trimap[point] = 255;
+        }
+        else
+        {
+            if (distance <= BackMattingRange && distance >=0 )
+                _trimap[point] = 127;
+            else
+                _trimap[point] = 0;
+        }
+    }
+
+    return trimap;
 }
 
 } //namespace portrait

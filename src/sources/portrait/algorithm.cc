@@ -11,9 +11,6 @@
 
 namespace portrait {
 
-const int
-    BorderSize = 5;
-
 const int GrabCutInteration = 3;
 //GrabCut的图片大小
 const double
@@ -164,7 +161,7 @@ static void DrawMask(
                   front_color, thickness);
 }
 
-namespace { //GetMixRaw函数内使用的组件
+namespace { //GetAlphaMatte函数内使用的组件
 
 template<class T>
 void CheckedFloodFill(cv::Mat& image,
@@ -202,9 +199,9 @@ void Clear(cv::Mat& mask)
         }
 }
 
-} //namespace GetMixRaw内使用的组件
+} //namespace GetAlphaMatte内使用的组件
 
-cv::Mat GetMixRaw(
+cv::Mat GetAlphaMatte(
     const cv::Mat& image,
     const cv::Rect& face_area,
     const cv::Mat& stroke)
@@ -272,13 +269,13 @@ cv::Mat GetMixRaw(
         Clear(mask);
     }
 
-    cv::Mat raw(image.rows, image.cols, CV_8UC4);
+    cv::Mat matte;
     {
         sybie::common::StatingTestTimer timer("GetMixRaw.Matting");
-        MatBorder(raw, image, mask);
+        matte = MatBorder(image, mask);
     }
 
-    return raw;
+    return matte;
 }
 
 void DrawGrabCutLines(

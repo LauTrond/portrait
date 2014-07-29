@@ -8,6 +8,7 @@
 #include <cassert>
 #include <algorithm>
 #include <iterator>
+#include <vector>
 
 #include "opencv2/opencv.hpp"
 #include "sybie/common/RichAssert.hh"
@@ -116,7 +117,7 @@ public:
         _sum_weight += weight;
     }
 
-    Tval Get() const
+    inline Tval Get() const
     {
         if (_sum_weight == 0)
             return TOrigin()();
@@ -124,12 +125,12 @@ public:
             return Tval(_sum / _sum_weight);
     }
 
-    float Count() const
+    inline float Count() const
     {
         return _sum_weight;
     }
 
-    Tval Sum() const
+    inline Tval Sum() const
     {
         return _sum;
     }
@@ -137,6 +138,47 @@ private:
     Tval _sum;
     float _sum_weight;
 }; //template<class T> class Mean
+
+template<class Tval, int N>
+class Median
+{
+public:
+    explicit Median()
+        : arr()
+    { }
+
+    inline void Reserve(int reserve_count)
+    {
+        for (int i = 0 ; i < N ; i++)
+            arr[i].reserve(reserve_count);
+    }
+
+    inline void Push(const cv::Vec<Tval, N>& val)
+    {
+        for (int i = 0 ; i < N ; i++)
+            arr[i].push_back(val[i]);
+    }
+
+    inline cv::Vec<Tval, N> Get() const
+    {
+        for (int i = 0 ; i < N ; i++)
+            std::sort(arr[i].begin(), arr[i].end());
+
+        cv::Vec<Tval, N> result;
+        for (int i = 0 ; i < N ; i++)
+            result[i] = arr[i][arr[i].size()/2];
+
+        return result;
+    }
+
+    inline int Count() const
+    {
+        return arr[0].size();
+    }
+
+private:
+    std::vector<Tval> arr[N];
+};
 
 template<class TVal,
          class TDist,

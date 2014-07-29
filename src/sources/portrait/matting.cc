@@ -325,21 +325,11 @@ void _StatBackSample(BackSample& sample,
         BackSamplingSize);
     sampling_area = OverlapArea(sampling_area, img.WholeArea());
 
-    std::vector<uint8_t> back_vec[3];
-    for (auto& v : back_vec)
-        v.reserve(sampling_area.size.Total());
+    Median<uint8_t,3> median;
+    median.Reserve(sampling_area.size.Total());
     for (auto& point : PointsIn(sampling_area))
-    {
-        const cv::Vec3b& pixel = img[point];
-        for (int cn = 0 ; cn < 3 ; cn++)
-            back_vec[cn].push_back(pixel[cn]);
-    }
-
-    for (auto& v : back_vec)
-        std::sort(v.begin(), v.end());
-    int back_index = back_vec[0].size() / 2;
-    for (int cn = 0 ; cn < 3 ; cn++)
-        sample.mean_back_color[cn] = back_vec[cn][back_index];
+        median.Push(img[point]);
+    sample.mean_back_color = median.Get();
 }
 
 struct FrontSample

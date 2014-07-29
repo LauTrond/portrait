@@ -159,7 +159,7 @@ public:
             arr[i].push_back(val[i]);
     }
 
-    inline cv::Vec<Tval, N> Get() const
+    inline cv::Vec<Tval, N> Get()
     {
         for (int i = 0 ; i < N ; i++)
             std::sort(arr[i].begin(), arr[i].end());

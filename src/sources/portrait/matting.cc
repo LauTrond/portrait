@@ -22,11 +22,11 @@ using namespace sybie::common::Graphics;
 namespace {
 
 //前景色采样中心与边缘距离
-enum { FrontSamplingDistance = 4 };
+enum { FrontSamplingDistance = 5 };
 //背景色采样中心与边缘距离
 enum { BackSamplingDistance = 30 };
 //前景色采样半径
-enum { FrontSamplingRange = 3 };
+enum { FrontSamplingRange = 4 };
 //背景色采样半径
 enum { BackSamplingRange = 3 };
 //混合范围，边缘向内（前景方向）的距离
@@ -44,7 +44,7 @@ enum {SphereRadius = 0xfff};
 //Matting前景色和背景色最小距离（欧氏距离），太小易被噪声干扰，太大则精确度下降
 enum {MinFrontBackDiff = 5};
 //前景分类，每个分类的最小距离
-enum {MinSphereDiff = MinFrontBackDiff * SphereRadius / 255 / 2};
+//enum {MinSphereDiff = 5 * SphereRadius / 255 / 4};
 
 const Size FrontSamplingSize(FrontSamplingRange * 2 + 1,
                              FrontSamplingRange * 2 + 1);
@@ -269,10 +269,12 @@ MatBase<std::pair<int, Point> > _GetDistMap(
         //遍历更新范围
         for (auto& point : PointsIn(update_area))
         {
-            if (dist_map[point].first < 0)
+            if (dist_map[point].first < 0 &&
+                (!mask.IsValid() || mask[point] > 0))
                 expanding.Update(point, expanding_point.source);
         }
         */
+
         auto _Update = [&](int offx, int offy){
             Point point = expanding_point.point + Point(offx, offy);
             if (dist_map[point].first < 0 &&
@@ -340,7 +342,7 @@ struct FrontSample
 
     Point center;
     const BackSample* back_sample;
-    KMeans<cv::Vec3i, MattingDistance<int, 3, MinSphereDiff>,
+    KMeans<cv::Vec3i, DistanceOfVector<int,3>,
            MeanOnSphere<SphereRadius> > kmeans;
     cv::Vec3i mean_color[KFront];
     int mean_color_squeue[KFront];
@@ -377,6 +379,21 @@ void _StatFrontSample(FrontSample& front_sample,
     front_sample.kmeans.Train(pixels_diff_vec.cbegin(),
                               pixels_diff_vec.cend());
 
+    //统计每个分类的颜色中位数
+    Median<int, 3> median[KFront];
+    for (auto& point : PointsIn(sampling_area))
+    {
+        const Point point_sub = point - sampling_area.point;
+        if (Squeue(point_sub.x) + Squeue(point_sub.y)
+                <= Squeue<int>(FrontSamplingRange))
+        {
+            //前景分类
+            int tag = front_sample.kmeans.GetTag(sphere_map[point_sub]);
+            median[tag].Push((cv::Vec3i)img[point] - back_color);
+        }
+    }
+
+    /*
     Mean<cv::Vec3i> meaning[KFront];
     for (auto& point : PointsIn(sampling_area))
     {
@@ -389,12 +406,13 @@ void _StatFrontSample(FrontSample& front_sample,
             meaning[tag].Push((cv::Vec3i)img[point] - back_color);
         }
     }
+    */
 
     //将结果保存到sample
     for (int k = 0 ; k < KFront ; k++)
     {
-        front_sample.mean_color[k] = meaning[k].Count() > 0 ?
-            meaning[k].Get() : Normalize(front_sample.kmeans.GetCenter(k),100);
+        front_sample.mean_color[k] = median[k].Count() > 0 ?
+            median[k].Get() : Normalize(front_sample.kmeans.GetCenter(k),100);
         front_sample.mean_color_squeue[k] =
             std::max(Squeue<int>(MinFrontBackDiff),
                      SqueueVec(front_sample.mean_color[k]));

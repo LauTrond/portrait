@@ -26,7 +26,7 @@ enum { FrontSamplingDistance = 5 };
 //背景色采样中心与边缘距离
 enum { BackSamplingDistance = 30 };
 //前景色采样半径
-enum { FrontSamplingRange = 4 };
+enum { FrontSamplingRange = 5 };
 //背景色采样半径
 enum { BackSamplingRange = 3 };
 //混合范围，边缘向内（前景方向）的距离
@@ -346,6 +346,7 @@ struct FrontSample
            MeanOnSphere<SphereRadius> > kmeans;
     cv::Vec3i mean_color[KFront];
     int mean_color_squeue[KFront];
+    int mean_color_modulus[KFront];
 }; //struct FrontSample
 
 void _StatFrontSample(FrontSample& front_sample,
@@ -416,6 +417,8 @@ void _StatFrontSample(FrontSample& front_sample,
         front_sample.mean_color_squeue[k] =
             std::max(Squeue<int>(MinFrontBackDiff),
                      SqueueVec(front_sample.mean_color[k]));
+        front_sample.mean_color_modulus[k] =
+            sqrt(front_sample.mean_color_squeue[k]);
     }
 }
 
@@ -582,16 +585,43 @@ cv::Mat MatBorder(const cv::Mat& image, const cv::Mat& mask)
                 //采样背景颜色
                 const cv::Vec3i& back_color =
                     front_sample.back_sample->mean_back_color;
+
+                const cv::Vec3i pixel_sphere =
+                    Normalize<int>(pixel, SphereRadius);
+                //std::cout<<SHOW(pixel_sphere)
+                //         <<SHOW(pixel);
+                Mean<double> mean_modulus;
+                for (int k = 0 ; k < KFront ; k++)
+                {
+                    double distance =
+                        front_sample.kmeans.DistanceOf(pixel_sphere, k);
+                    double count =
+                        front_sample.kmeans.Count(k);
+                    mean_modulus.Push((double)front_sample.mean_color_modulus[k],
+                                      count/(distance+1));
+
+                    //std::cout<<SHOW(distance)
+                    //         <<SHOW(count)
+                    //         <<SHOW(front_sample.mean_color_modulus[k]);
+                }
+                const double front_modulus = mean_modulus.Get();
+                const double modulus = ModulusOf(pixel - back_color);
+                int alpha = (int)(255 * modulus / front_modulus);
+                //std::cout<<modulus<<"/"<<front_modulus<<"="<<alpha<<std::endl;
+
+                /*
                 //前景分类
                 int tag = front_sample.kmeans.GetTag(
                     Normalize(pixel - back_color, (int)SphereRadius));
                 //采样前景颜色(相对背景色)
                 const cv::Vec3i& front_color =
                     front_sample.mean_color[tag];
+
                 //Alpha
                 int alpha = 255
                     * front_color.dot(pixel - back_color)
                     / front_sample.mean_color_squeue[tag];
+                */
                 alpha_pixel = TruncByte(alpha);
                 //背景色结果
                 back_pixel =

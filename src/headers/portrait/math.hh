@@ -111,9 +111,9 @@ class Mean
 public:
     Mean() : _sum(TOrigin()()), _sum_weight(0) { }
 
-    inline void Push(const Tval& val, float weight = 1)
+    inline void Push(const Tval& val, double weight = 1)
     {
-        _sum += val;
+        _sum += val * weight;
         _sum_weight += weight;
     }
 
@@ -125,7 +125,7 @@ public:
             return Tval(_sum / _sum_weight);
     }
 
-    inline float Count() const
+    inline double Count() const
     {
         return _sum_weight;
     }
@@ -136,7 +136,7 @@ public:
     }
 private:
     Tval _sum;
-    float _sum_weight;
+    double _sum_weight;
 }; //template<class T> class Mean
 
 template<class Tval, int N>

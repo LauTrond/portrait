@@ -191,9 +191,9 @@ public:
     { }
 
     KMeans(const KMeans& another)
-        : _k(another.k),
-          _center(new TVal[another.k]),
-          _cnt(new int[another.k])
+        : _k(another._k),
+          _center(new TVal[another._k]),
+          _cnt(new int[another._k])
     {
         for (int i = 0 ; i < _k ; i++)
         {

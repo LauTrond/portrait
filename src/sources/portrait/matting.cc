@@ -425,6 +425,7 @@ void _StatFrontSample(FrontSample& front_sample,
 template<class T>
 bool Found(const MatBase<T>& mat, const Rect& area, const T& val)
 {
+    using sybie::common::Graphics::OverlapArea;
     for (auto& point : PointsIn(OverlapArea(area,mat.WholeArea())))
         if (mat[point] == val)
             return true;

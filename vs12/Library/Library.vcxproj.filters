@@ -46,6 +46,9 @@
     <Filter Include="src\sources\sybie\datain">
       <UniqueIdentifier>{551b1014-d543-46be-bc92-59cab03f1491}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\headers\sybie\common\Graphics">
+      <UniqueIdentifier>{cb920c97-de51-4a4c-b00f-773e59dbd1af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\portrait\exception.hh">
@@ -144,6 +147,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\headers\portrait\matting.hh">
       <Filter>src\headers\portrait</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Graphics\CVCast.hh">
+      <Filter>src\headers\sybie\common\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Graphics\Structs.hh">
+      <Filter>src\headers\sybie\common\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\headers\sybie\common\Graphics\Structs_fwd.hh">
+      <Filter>src\headers\sybie\common\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

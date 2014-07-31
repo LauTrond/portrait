@@ -8,10 +8,11 @@ edit － 用摄像头捕捉图像或加载一个图片，然后用鼠标编辑�
 
 Linux、OS X下编译和使用示例程序：
 示例程序的Makefile分别在：
-  make/camera/bin/release/camera
-  make/imgtest/bin/release/imgtest
-  make/edit/bin/release/edit
-例如，若要使用imgtest示例，进入make/imgtest子目录，执行：
+  make/camera
+  make/imgtest
+  make/edit
+例如，若要使用imgtest示例，执行：
+  cd <portrait>/make/imgtest
   make
   make run
 

@@ -49,6 +49,9 @@
   #自动收集的C++源文件（在gen目录下）
   GEN_FILES         ?=
 
+  #执行make run时启动程序的参数
+  RUN_ARGUMENTS     ?=
+
   #支持的通用变量
   CXX               ?= g++
   CXXFLAGS          ?=
@@ -100,7 +103,7 @@ all : $(BIN_DIR)/$(BIN)
 	@find . -name "tp??????" | xargs $(RM)
 
 run : all
-	@$(BIN_DIR)/$(BIN)
+	@$(BIN_DIR)/$(BIN) $(RUN_ARGUMENTS)
 
 BUILD_CMD :=
 

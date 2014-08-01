@@ -28,7 +28,7 @@ public:
     DataLoader(std::istream& is, size_t data_size)
         : _data_size(data_size),
           _pipe_stream(),
-          _decode_result(std::async([&]{
+          _decode_result(std::async(std::launch::async, [&]{
               auto os = _pipe_stream.GetOutputStream();
               Decode(is, *os);
           }))

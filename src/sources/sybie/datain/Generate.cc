@@ -37,7 +37,7 @@ void Generate(std::istream& is, std::ostream& os,
     common::PipeStream pipe1, pipe2;
 
     //压缩线程
-    auto compress_result = std::async([&]{
+    auto compress_result = std::async(std::launch::async, [&]{
         auto _os = pipe1.GetOutputStream();
         StreamSink sink(*_os);
 
@@ -49,7 +49,7 @@ void Generate(std::istream& is, std::ostream& os,
         snappy::Compress(&source, &sink);
     });
     //编码线程
-    auto encode_result = std::async([&]{
+    auto encode_result = std::async(std::launch::async, [&]{
         auto _is = pipe1.GetInputStream();
         auto _os = pipe2.GetOutputStream();
         Encode(*_is, *_os);
